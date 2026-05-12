@@ -8,12 +8,12 @@ A web-based cybersecurity awareness game that teaches students phishing awarenes
 
 ## 👥 Team Members
 
-| Member | Role | Branch |
-|--------|------|--------|
-| Member 1 (Team Lead) | Authentication & Security | `feature/auth-security` |
-| Member 2 | Game Module Developer | `feature/game-modules` |
-| Member 3 | Admin Dashboard & Frontend/UI | `feature/admin-dashboard` |
-| Member 4 | DevSecOps & Testing | `feature/devsecops-testing` |
+| # | Name | Student ID | Role | Branch |
+|---|------|------------|------|--------|
+| 1 | Prashan Manandhar ⭐ Team Lead | CIHE241182 | Authentication & Security | `feature/auth-security` |
+| 2 | Raju Kshetri | CIHE240711 | Game Module Developer | `feature/game-modules` |
+| 3 | Pramesh Silwal | CIHE241339 | Admin Dashboard & Frontend/UI | `feature/admin-dashboard` |
+| 4 | Susanta Dhakal | CIHE250321 | DevSecOps & Testing | `feature/devsecops-testing` |
 
 ---
 
@@ -42,10 +42,10 @@ cybersecurity-awareness-game/
 │   ├── app.py              # Main Flask application entry point
 │   ├── models.py           # Database models (User, Challenge, Score)
 │   ├── routes.py           # General routes
-│   ├── auth.py             # Login, register, 2FA (Member 1)
-│   ├── game.py             # Game logic, scoring, badges (Member 2)
-│   ├── admin.py            # Teacher dashboard (Member 3)
-│   ├── security.py         # Security logging, access control (Member 1)
+│   ├── auth.py             # Login, register, 2FA (Prashan)
+│   ├── game.py             # Game logic, scoring, badges (Raju)
+│   ├── admin.py            # Teacher dashboard (Pramesh)
+│   ├── security.py         # Security logging, access control (Prashan)
 │   ├── templates/          # HTML templates (Jinja2)
 │   └── static/             # CSS, JS, images
 ├── tests/
@@ -81,7 +81,7 @@ cybersecurity-awareness-game/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR-USERNAME/cybersecurity-awareness-game.git
+git clone https://github.com/mdrprashan/Cybersecurity-awareness-game.git
 cd cybersecurity-awareness-game
 
 # 2. Create a virtual environment
@@ -152,13 +152,17 @@ See `.github/workflows/devsecops.yml` for full pipeline config.
 git checkout dev
 git pull origin dev
 
-# Create your feature branch
-git checkout -b feature/your-name-feature
+# Create your feature branch (use your assigned branch name)
+# Prashan  → feature/auth-security
+# Raju     → feature/game-modules
+# Pramesh  → feature/admin-dashboard
+# Susanta  → feature/devsecops-testing
+git checkout -b feature/your-branch-name
 
 # Make changes, then commit
 git add .
 git commit -m "Brief description of what you did"
-git push origin feature/your-name-feature
+git push origin feature/your-branch-name
 
 # Open a Pull Request to dev on GitHub
 ```

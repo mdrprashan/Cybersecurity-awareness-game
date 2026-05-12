@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Login — CyberQuest{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card shadow-lg p-4 mt-4">
+      <div class="text-center mb-4">
+        <i class="bi bi-shield-lock-fill" style="font-size: 3rem; color: #FFD700;"></i>
+        <h2 class="mt-2" style="color: #FFD700;">Login to CyberQuest</h2>
+        <p style="color: #FFFFFF;">Enter your credentials to continue</p>
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+
+        <!-- Username -->
+        <div class="mb-3">
+          <label for="username" style="color: #FFD700; font-weight: 600;">Username</label>
+          <input type="text" class="form-control form-control-lg" id="username"
+                 name="username" value="{{ username or '' }}"
+                 placeholder="Enter your username" required autofocus>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+          <label for="password" style="color: #FFD700; font-weight: 600;">Password</label>
+          <input type="password" class="form-control form-control-lg" id="password"
+                 name="password" placeholder="Enter your password" required>
+        </div>
+
+        <!-- Remember Me + Forgot Password row -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox"
+                   id="remember_me" name="remember_me">
+            <label class="form-check-label" for="remember_me"
+                   style="color: #FFFFFF; cursor: pointer;">
+              Remember me
+            </label>
+          </div>
+          <a href="{{ url_for('auth.forgot_password') }}"
+             style="color: #FFD700; font-weight: 600; font-size: 0.9rem;">
+            Forgot password?
+          </a>
+        </div>
+
+        <!-- Submit -->
+        <div class="d-grid mt-3">
+          <button type="submit" class="btn btn-lg"
+                  style="background-color: #FFD700; color: #0D1B2A; font-weight: 700; font-size: 1.1rem;">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+          </button>
+        </div>
+      </form>
+
+      <hr style="border-color: #2A4A6F; margin: 24px 0;">
+      <p class="text-center mb-0" style="color: #FFFFFF;">
+        Don't have an account?
+        <a href="{{ url_for('auth.register') }}"
+           style="color: #FFD700; font-weight: 700;">Register here</a>
+      </p>
+    </div>
+
+    <!-- Admin info box -->
+    <div class="card mt-3 p-3" style="border: 1px solid #FFD700;">
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-person-fill-gear"
+           style="font-size: 2rem; color: #FFD700; flex-shrink: 0;"></i>
+        <div>
+          <p class="mb-1" style="color: #FFD700; font-weight: 700;">Admin / Teacher Login</p>
+          <p class="mb-0" style="color: #FFFFFF; font-size: 0.9rem;">
+            Use your assigned teacher credentials above to access the teacher dashboard.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

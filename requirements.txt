@@ -19,6 +19,12 @@ pyotp==2.9.0
 # QR Code generation for 2FA setup
 qrcode[pil]==7.4.2
 
+# Email — password reset
+flask-mail==0.10.0
+
+# Secure token generation — password reset links
+itsdangerous==2.2.0
+
 # Testing
 pytest==8.2.2
 pytest-flask==1.3.0

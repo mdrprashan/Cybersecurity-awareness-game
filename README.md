@@ -2,7 +2,7 @@
 
 > ICT932 – Cybersecurity Testing and Assurance | Group Project
 
-A web-based cybersecurity awareness game that teaches students phishing awareness, password security, social engineering, and safe browsing through interactive challenges, scoring, badges, and a teacher dashboard.
+A web-based cybersecurity awareness game that teaches students phishing awareness, password security, and safe browsing through interactive challenges, scoring, badges, and a teacher dashboard.
 
 ---
 
@@ -10,10 +10,10 @@ A web-based cybersecurity awareness game that teaches students phishing awarenes
 
 | # | Name | Student ID | Role | Branch |
 |---|------|------------|------|--------|
-| 1 | Prashan Manandhar ⭐ Team Lead | CIHE241182 | Authentication & Security | `feature/auth-security` |
+| 1 | Prashan Manandhar ⭐ Team Lead | CIHE241182 | Authentication & Security + Basic CI/CD Pipeline | `feature/auth-security` |
 | 2 | Raju Kshetri | CIHE240711 | Game Module Developer | `feature/game-modules` |
-| 3 | Pramesh Silwal | CIHE241339 | Admin Dashboard & Frontend/UI | `feature/admin-dashboard` |
-| 4 | Susanta Dhakal | CIHE250321 | DevSecOps & Testing | `feature/devsecops-testing` |
+| 3 | Pramesh Silwal | CIHE241339 | Admin Dashboard + Frontend/UI (shared) | `feature/admin-dashboard` |
+| 4 | Susanta Dhakal | CIHE250321 | DevSecOps + Testing + Landing Page (shared) | `feature/devsecops-testing` |
 
 ---
 
@@ -21,12 +21,12 @@ A web-based cybersecurity awareness game that teaches students phishing awarenes
 
 | Layer | Tool |
 |-------|------|
-| Backend | Python Flask |
-| Frontend | HTML, CSS, JavaScript, Bootstrap |
-| Database | SQLite |
+| Backend | Python Flask 3.0 |
+| Frontend | HTML5, CSS3, JavaScript, Bootstrap 5 |
+| Database | SQLite + Flask-SQLAlchemy |
 | Auth | Flask-Login + Flask-Bcrypt |
-| 2FA | PyOTP |
-| Testing | Pytest |
+| 2FA | PyOTP (TOTP) + qrcode |
+| Testing | Pytest + pytest-flask |
 | SAST | Bandit |
 | Dependency Scan | pip-audit |
 | DAST | OWASP ZAP |
@@ -37,34 +37,47 @@ A web-based cybersecurity awareness game that teaches students phishing awarenes
 ## 📁 Project Structure
 
 ```
-cybersecurity-awareness-game/
+Cybersecurity-awareness-game/
 ├── src/
-│   ├── app.py              # Main Flask application entry point
-│   ├── models.py           # Database models (User, Challenge, Score)
-│   ├── routes.py           # General routes
-│   ├── auth.py             # Login, register, 2FA (Prashan)
+│   ├── app.py              # Flask app factory — create_app(), extensions, blueprints
+│   ├── models.py           # DB models: User, Challenge, Score, Badge, UserBadge, LoginAttempt
+│   ├── auth.py             # Login, register, logout, 2FA (Prashan)
 │   ├── game.py             # Game logic, scoring, badges (Raju)
-│   ├── admin.py            # Teacher dashboard (Pramesh)
-│   ├── security.py         # Security logging, access control (Prashan)
-│   ├── templates/          # HTML templates (Jinja2)
-│   └── static/             # CSS, JS, images
+│   ├── admin.py            # Teacher dashboard, question management (Pramesh)
+│   ├── security.py         # Login attempt logging, access control (Prashan)
+│   ├── templates/          # Jinja2 HTML templates
+│   │   ├── base.html       # Base layout + navbar (Pramesh & Susanta)
+│   │   ├── index.html      # Landing page (Susanta)
+│   │   ├── login.html      # Login page (Prashan)
+│   │   ├── register.html   # Register page (Prashan)
+│   │   ├── 2fa_setup.html  # 2FA QR code setup (Prashan)
+│   │   ├── 2fa_verify.html # 2FA code entry (Prashan)
+│   │   ├── challenges.html # Challenge categories (Raju)
+│   │   ├── question.html   # Quiz question page (Raju)
+│   │   ├── result.html     # Quiz result page (Raju)
+│   │   ├── progress.html   # Student progress + badges (Raju)
+│   │   └── admin_dashboard.html  # Teacher dashboard (Pramesh)
+│   └── static/
+│       ├── style.css       # Custom CSS (Pramesh)
+│       └── game.js         # Quiz interaction JS (Raju)
 ├── tests/
-│   ├── test_auth.py
-│   ├── test_game.py
-│   ├── test_admin.py
-│   └── test_security.py
+│   ├── conftest.py         # Shared pytest fixtures (Susanta)
+│   ├── test_auth.py        # Auth unit tests (Prashan)
+│   ├── test_game.py        # Game unit tests (Raju)
+│   ├── test_admin.py       # Admin unit tests (Pramesh)
+│   └── test_security.py    # Security tests (Susanta)
 ├── docs/
-│   ├── threat_model.md
-│   ├── architecture.md
-│   ├── user_guide.md
-│   ├── testing_results.md
-│   └── screenshots/
+│   ├── threat_model.md     # STRIDE threat analysis (Prashan)
+│   ├── architecture.md     # System architecture (Susanta)
+│   ├── user_guide.md       # User guide (Pramesh)
+│   ├── testing_results.md  # Test and scan results (Susanta)
+│   └── screenshots/        # App screenshots for report
 ├── ci-cd/
 │   └── github-actions-notes.md
 ├── .github/
 │   └── workflows/
-│       └── devsecops.yml
-├── requirements.txt
+│       └── devsecops.yml   # GitHub Actions CI/CD pipeline
+├── requirements.txt        # Python dependencies
 ├── README.md
 └── .gitignore
 ```
@@ -76,13 +89,14 @@ cybersecurity-awareness-game/
 ### Prerequisites
 - Python 3.10+
 - pip
+- Git
 
 ### Installation
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/mdrprashan/Cybersecurity-awareness-game.git
-cd cybersecurity-awareness-game
+cd Cybersecurity-awareness-game
 
 # 2. Create a virtual environment
 python -m venv venv
@@ -99,27 +113,27 @@ python app.py
 
 Open your browser at `http://localhost:5000`
 
-### Test Accounts (Demo)
+### Demo Accounts
 
-| Role | Username | Password |
-|------|----------|----------|
+| Role | Email | Password |
+|------|-------|----------|
 | Student | `student@demo.com` | `Test1234!` |
 | Teacher | `teacher@demo.com` | `Admin1234!` |
 
-> ⚠️ These are demo accounts only. Change before any deployment.
+> ⚠️ Demo accounts only. Do not use in any real deployment.
 
 ---
 
 ## 🔐 Security Features
 
-- Secure registration with bcrypt password hashing
-- Role-Based Access Control (RBAC): Student and Teacher roles
+- Secure password hashing with Flask-Bcrypt
+- Role-Based Access Control (RBAC) — Student and Teacher roles
 - Two-Factor Authentication (2FA) using PyOTP (TOTP)
-- Login attempt logging
-- Protected routes with Flask-Login
-- SAST via Bandit
-- Dependency scanning via pip-audit
-- DAST via OWASP ZAP baseline scan
+- Login attempt logging for brute force detection
+- Protected routes with Flask-Login decorators
+- SAST scanning via Bandit
+- Dependency vulnerability scanning via pip-audit
+- Dynamic security testing via OWASP ZAP baseline scan
 
 ---
 
@@ -135,37 +149,42 @@ pytest tests/ -v
 
 GitHub Actions runs automatically on every push to `dev` or `main`:
 
-1. **Build** — Install dependencies
-2. **Test** — Run Pytest
-3. **SAST** — Bandit security scan
-4. **Dependency Scan** — pip-audit
-5. **DAST** — OWASP ZAP baseline scan (on `main` only)
+| Stage | Tool | Trigger |
+|-------|------|---------|
+| 1. Build | pip install | All branches |
+| 2. Test | Pytest | All branches |
+| 3. SAST | Bandit | All branches |
+| 4. Dependency Scan | pip-audit | All branches |
+| 5. DAST | OWASP ZAP | `main` only |
 
-See `.github/workflows/devsecops.yml` for full pipeline config.
+See `.github/workflows/devsecops.yml` for full pipeline configuration.
 
 ---
 
 ## 📋 Git Workflow
 
 ```bash
-# Always start from dev
-git checkout dev
-git pull origin dev
+# Always start by pulling latest changes
+git checkout feature/your-branch-name
+git pull origin feature/your-branch-name
 
-# Create your feature branch (use your assigned branch name)
-# Prashan  → feature/auth-security
-# Raju     → feature/game-modules
-# Pramesh  → feature/admin-dashboard
-# Susanta  → feature/devsecops-testing
-git checkout -b feature/your-branch-name
-
-# Make changes, then commit
+# Make your changes, then commit
 git add .
-git commit -m "Brief description of what you did"
-git push origin feature/your-branch-name
+git commit -m "Clear description of what you did"
+git push
 
-# Open a Pull Request to dev on GitHub
+# Open a Pull Request into dev on GitHub when feature is ready
+# Prashan (Team Lead) reviews and merges all Pull Requests
 ```
+
+### Branch Assignment
+
+| Member | Branch |
+|--------|--------|
+| Prashan | `feature/auth-security` |
+| Raju | `feature/game-modules` |
+| Pramesh | `feature/admin-dashboard` |
+| Susanta | `feature/devsecops-testing` |
 
 **Commit at least 2 meaningful commits per week from Week 6 onward.**
 
@@ -175,12 +194,12 @@ git push origin feature/your-branch-name
 
 | Week | Goal |
 |------|------|
-| Week 6 | Project setup, GitHub repo, initial Flask app |
-| Week 7 | Login, registration, roles, basic game page |
-| Week 8 | 2FA, phishing quiz, scoring, Bandit scan |
-| Week 9 | 15 challenges, badges, progress tracking |
-| Week 10 | Alpha — full game + CI/CD pipeline |
-| Week 11 | Final testing, report prep, screenshots |
+| Week 6 | Project setup, GitHub repo, Flask app, database models |
+| Week 7 | Login, register, RBAC, first game category, base template |
+| Week 8 | 2FA, phishing quiz, scoring, Bandit scan in pipeline |
+| Week 9 | All 15 challenges, badges, progress tracking, pip-audit + ZAP |
+| Week 10 | Alpha — full app working, all pipeline stages green |
+| Week 11 | Final testing, report writing, screenshots |
 | Week 12 | Presentation and live demo |
 | Week 13 | Final report submission |
 
@@ -188,10 +207,10 @@ git push origin feature/your-branch-name
 
 ## 🤖 AI Tool Declaration
 
-As per ICT932 assessment requirements, AI tools were used for research, brainstorming, and concept clarification during this project. All final report content and code have been written and reviewed by team members.
+As per ICT932 assessment requirements, AI tools were used to assist with research, code scaffolding, and concept clarification during this project. All final code has been reviewed, tested, and understood by the respective team members responsible for each module.
 
 ---
 
 ## 📄 License
 
-This project is developed for academic purposes as part of ICT932 at Crown Institute of Higher Education (CIHE).
+This project is developed for academic purposes as part of ICT932 — Cybersecurity Testing and Assurance at Crown Institute of Higher Education (CIHE).

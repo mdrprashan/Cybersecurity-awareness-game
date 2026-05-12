@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.pyc
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Flask / SQLite
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment Variables (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+config.py
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Security scan outputs (keep locally, add results to docs/ manually)
+bandit-report.json
+zap-report.html
+safety-report.txt
+pip-audit-report.txt
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# GitHub Actions cache
+.github/actions/

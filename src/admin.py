@@ -73,3 +73,44 @@ def add_question():
         return redirect(url_for('admin.questions'))
 
     return render_template('add_question.html')
+    # Edit question
+@admin_bp.route('/admin/questions/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_question(id):
+
+    question = Challenge.query.get_or_404(id)
+
+    if request.method == 'POST':
+
+        question.category = request.form['category']
+        question.question = request.form['question']
+        question.option_a = request.form['option_a']
+        question.option_b = request.form['option_b']
+        question.option_c = request.form['option_c']
+        question.option_d = request.form['option_d']
+        question.correct_answer = request.form['correct_answer']
+        question.difficulty = request.form['difficulty']
+        question.points = request.form['points']
+
+        db.session.commit()
+
+        flash('Question updated successfully!', 'success')
+
+        return redirect(url_for('admin.questions'))
+
+    return render_template('edit_question.html', question=question)
+
+
+# Delete question
+@admin_bp.route('/admin/questions/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_question(id):
+
+    question = Challenge.query.get_or_404(id)
+
+    db.session.delete(question)
+    db.session.commit()
+
+    flash('Question deleted successfully!', 'success')
+
+    return redirect(url_for('admin.questions'))

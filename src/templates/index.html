@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}CyberQuest — Cybersecurity Awareness Game{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="text-center py-5">
+  <h1 class="display-4 fw-bold" style="color: #FFD700;">
+    Level Up Your Cybersecurity Knowledge
+  </h1>
+  <p class="lead mt-3" style="color: #FFFFFF; font-size: 1.2rem; font-weight: 500;">
+    Play interactive challenges on phishing, passwords, and safe browsing.<br>
+    Earn badges. Beat your score. Stay secure.
+  </p>
+  <div class="mt-4 d-flex justify-content-center gap-3 flex-wrap">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-gold btn-lg px-4">
+      <i class="bi bi-controller me-2"></i>Start Playing
+    </a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-gold btn-lg px-4">
+      <i class="bi bi-box-arrow-in-right me-2"></i>Login
+    </a>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div class="text-center py-3 mb-5">
+  <span class="badge me-2 px-3 py-2"
+        style="background-color: #FFD700; color: #0D1B2A; font-size: 0.95rem; font-weight: 700;">
+    15 Challenges
+  </span>
+  <span class="badge me-2 px-3 py-2"
+        style="background-color: #FFD700; color: #0D1B2A; font-size: 0.95rem; font-weight: 700;">
+    3 Categories
+  </span>
+  <span class="badge px-3 py-2"
+        style="background-color: #FFD700; color: #0D1B2A; font-size: 0.95rem; font-weight: 700;">
+    Real-world Scenarios
+  </span>
+</div>
+
+<!-- Feature Cards -->
+<div class="row g-4 mb-5">
+  <div class="col-md-4">
+    <div class="card h-100 text-center p-4">
+      <i class="bi bi-envelope-exclamation" style="font-size: 2.5rem; color: #FFD700;"></i>
+      <h5 class="mt-3" style="color: #FFD700;">Phishing Awareness</h5>
+      <p style="color: #FFFFFF;">
+        Learn to identify phishing emails, suspicious links, and social engineering attacks.
+      </p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 text-center p-4">
+      <i class="bi bi-key-fill" style="font-size: 2.5rem; color: #FFD700;"></i>
+      <h5 class="mt-3" style="color: #FFD700;">Password Security</h5>
+      <p style="color: #FFFFFF;">
+        Master strong password creation, password managers, and multi-factor authentication.
+      </p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 text-center p-4">
+      <i class="bi bi-globe2" style="font-size: 2.5rem; color: #FFD700;"></i>
+      <h5 class="mt-3" style="color: #FFD700;">Safe Browsing</h5>
+      <p style="color: #FFFFFF;">
+        Understand HTTPS, browser warnings, public WiFi risks, and safe downloads.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="text-center mb-5">
+  <h3 class="mb-4" style="color: #FFD700;">How It Works</h3>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h1 style="color: #FFD700; font-size: 3rem;">1</h1>
+        <p style="color: #FFFFFF; font-weight: 500; margin-bottom: 0;">
+          Register and create your profile
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h1 style="color: #FFD700; font-size: 3rem;">2</h1>
+        <p style="color: #FFFFFF; font-weight: 500; margin-bottom: 0;">
+          Choose a challenge category
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4">
+        <h1 style="color: #FFD700; font-size: 3rem;">3</h1>
+        <p style="color: #FFFFFF; font-weight: 500; margin-bottom: 0;">
+          Answer questions and earn badges
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

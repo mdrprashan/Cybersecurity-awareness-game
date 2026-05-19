@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Setup Google Authenticator — CyberQuest{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card shadow-lg p-4 mt-4">
+      <div class="text-center mb-4">
+        <i class="bi bi-shield-check" style="font-size: 3rem; color: #FFD700;"></i>
+        <h2 class="mt-2" style="color: #FFD700;">Set Up Google Authenticator</h2>
+        <p style="color: #FFFFFF;">
+          Secure your account with two-factor authentication.<br>
+          Every login will require a 6-digit code from your phone.
+        </p>
+      </div>
+
+      <!-- Instructions -->
+      <div class="mb-4 p-3 rounded" style="background-color: #0A1628; border: 1px solid #FFD700;">
+        <p style="color: #FFD700; font-weight: 700; margin-bottom: 8px;">
+          <i class="bi bi-list-ol me-2"></i>Steps to set up:
+        </p>
+        <ol style="color: #FFFFFF; margin-bottom: 0; padding-left: 20px;">
+          <li class="mb-2">Download <strong style="color: #FFD700;">Google Authenticator</strong> from the App Store or Google Play</li>
+          <li class="mb-2">Open the app → tap <strong style="color: #FFD700;">"+"</strong> → tap <strong style="color: #FFD700;">"Scan a QR code"</strong></li>
+          <li class="mb-2">Point your camera at the QR code below</li>
+          <li class="mb-2">A 6-digit code will appear — enter it below and click Confirm</li>
+        </ol>
+      </div>
+
+      <!-- QR Code -->
+      <div class="text-center mb-4">
+        <p style="color: #FFD700; font-weight: 700;">Scan with Google Authenticator:</p>
+        <img src="data:image/png;base64,{{ qr_code }}"
+             alt="QR Code"
+             style="max-width: 220px; border: 4px solid #FFD700; padding: 8px; background: white; border-radius: 8px;">
+      </div>
+
+      <!-- Manual key -->
+      <div class="text-center mb-4 p-3 rounded" style="background-color: #0A1628; border: 1px solid #2A4A6F;">
+        <p style="color: #FFFFFF; margin-bottom: 6px;">
+          Can't scan? In Google Authenticator tap <strong style="color: #FFD700;">"Enter a setup key"</strong> and use:
+        </p>
+        <strong style="color: #FFD700; letter-spacing: 4px; font-size: 1.2rem;">{{ secret }}</strong>
+      </div>
+
+      <!-- Verify -->
+      <form method="POST" action="{{ url_for('auth.setup_2fa') }}">
+        <input type="hidden" name="secret" value="{{ secret }}">
+        <div class="mb-3">
+          <label for="code" class="form-label">
+            Enter the 6-digit code from Google Authenticator
+          </label>
+          <input type="text" class="form-control form-control-lg text-center"
+                 id="code" name="code" maxlength="6"
+                 placeholder="000000" autocomplete="off" autofocus required
+                 style="font-size: 1.6rem; letter-spacing: 8px; font-weight: 700;">
+          <div class="form-text">Code refreshes every 30 seconds — enter it quickly.</div>
+        </div>
+        <div class="d-grid">
+          <button type="submit" class="btn btn-gold btn-lg">
+            <i class="bi bi-check-circle me-2"></i>Confirm & Enable 2FA
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

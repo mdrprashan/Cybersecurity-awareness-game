@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from extensions import db
 from models import Challenge, Score, Badge, UserBadge
@@ -148,3 +149,34 @@ def check_and_award_badges(user_id):
 
     if total_answered >= 15 and total_correct == 15:
         award_badge("Perfect Score", "⭐")
+=======
+# =============================================================
+# game.py — Game Module Blueprint
+# Author: Raju Kshetri (CIHE240711)
+# Week 7: Placeholder routes added so redirects work
+# Full implementation coming in Week 8-9
+# =============================================================
+
+from flask import Blueprint, render_template
+from flask_login import login_required
+
+game_bp = Blueprint('game', __name__)
+
+
+@game_bp.route('/challenges')
+@login_required
+def challenges():
+    """Challenge categories page — full implementation by Raju (Week 8)."""
+    return render_template('coming_soon.html',
+                           title='Challenges',
+                           message='Game module coming soon — Raju is working on it!')
+
+
+@game_bp.route('/progress')
+@login_required
+def progress():
+    """Student progress page — full implementation by Raju (Week 9)."""
+    return render_template('coming_soon.html',
+                           title='My Progress',
+                           message='Progress tracking coming soon!')
+>>>>>>> 2fedc19c1e149c4096028ddde2a127ed8c8b3dee

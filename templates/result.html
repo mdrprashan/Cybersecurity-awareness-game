@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CyberQuest Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-5">
+
+    <div class="card shadow p-4 text-center">
+        <h1>Quiz Result</h1>
+
+        <h3 class="mt-3">Total Score: {{ total_score }}</h3>
+        <h4>Completion: {{ percentage }}%</h4>
+
+        <div class="progress mt-4 mb-4">
+            <div class="progress-bar" style="width: {{ percentage }}%;">
+                {{ percentage }}%
+            </div>
+        </div>
+
+        <h4>Badges Earned</h4>
+
+        {% if badges %}
+            {% for user_badge in badges %}
+                <span class="badge bg-success p-3 m-2">
+                    {{ user_badge.badge.icon }} {{ user_badge.badge.name }}
+                </span>
+            {% endfor %}
+        {% else %}
+            <p>No badges earned yet.</p>
+        {% endif %}
+
+        <div class="mt-4">
+            <a href="{{ url_for('game.challenges') }}" class="btn btn-primary">Back to Challenges</a>
+            <a href="{{ url_for('game.progress') }}" class="btn btn-success">View Progress</a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CyberQuest Progress</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-5">
+
+    <h1 class="text-center mb-4">Student Progress Dashboard</h1>
+
+    <div class="card shadow p-4 mb-4">
+        <h3>Total Score: {{ total_score }}</h3>
+        <h4>Overall Completion: {{ percentage }}%</h4>
+
+        <div class="progress mt-3">
+            <div class="progress-bar" style="width: {{ percentage }}%;">
+                {{ percentage }}%
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow p-4 mb-4">
+        <h3>Badges Earned</h3>
+
+        {% if badges %}
+            {% for user_badge in badges %}
+                <div class="card p-3 mb-2">
+                    <h5>{{ user_badge.badge.icon }} {{ user_badge.badge.name }}</h5>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No badges earned yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card shadow p-4">
+        <h3>Recent Activity</h3>
+
+        {% if recent_activity %}
+            <ul class="list-group">
+                {% for activity in recent_activity %}
+                    <li class="list-group-item">
+                        Question ID {{ activity.challenge_id }} —
+                        {% if activity.is_correct %}
+                            <span class="text-success">Correct</span>
+                        {% else %}
+                            <span class="text-danger">Incorrect</span>
+                        {% endif %}
+                        — Points: {{ activity.points }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No recent activity yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('game.challenges') }}" class="btn btn-primary">Back to Challenges</a>
+    </div>
+
+</div>
+
+</body>
+</html>

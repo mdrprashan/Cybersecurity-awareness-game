@@ -1,53 +1,58 @@
-# =============================================================
-# auth.py — Authentication Blueprint
-# Author: Prashan Manandhar (CIHE241182)
-# Features: Register, Login (Remember Me), Logout,
-#           Forgot Password, Reset Password, 2FA, RBAC
-# =============================================================
+"""
+auth.py — Authentication Blueprint
+ICT932 – Cybersecurity Testing and Assurance
+Author: Prashan Manandhar (CIHE241182)
 
-from flask import (Blueprint, render_template, redirect,
-                   url_for, flash, request, session, make_response)
-from flask_login import login_user, logout_user, login_required, current_user
+Covers: login, register, logout, 2FA setup (TOTP) and verification.
+"""
+
+import pyotp
+import qrcode
+import io
+import base64
 from functools import wraps
-from models import db, User
-from security import log_login_attempt
+
+from flask import (Blueprint, render_template, redirect, url_for,
+                   flash, request, session)
+from flask_login import login_user, logout_user, login_required, current_user
+
+from app import db, bcrypt
+from models import User
+from security import log_login_attempt, is_account_locked
 
 auth_bp = Blueprint('auth', __name__)
 
 
-# =============================================================
-# RBAC Decorators
-# =============================================================
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
-def student_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash('Please log in to access this page.', 'warning')
-            return redirect(url_for('auth.login'))
-        if current_user.role != 'student':
-            flash('This page is for students only.', 'danger')
-            return redirect(url_for('admin.dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
+def _validate_password_strength(password: str) -> list[str]:
+    """Return a list of unmet password requirements."""
+    errors = []
+    if len(password) < 8:
+        errors.append('Password must be at least 8 characters.')
+    if not any(c.isupper() for c in password):
+        errors.append('Password must contain at least one uppercase letter.')
+    if not any(c.islower() for c in password):
+        errors.append('Password must contain at least one lowercase letter.')
+    if not any(c.isdigit() for c in password):
+        errors.append('Password must contain at least one number.')
+    if not any(c in '!@#$%^&*()_+-=[]{};\':\"\\|,.<>/?`~' for c in password):
+        errors.append('Password must contain at least one special character.')
+    return errors
 
 
 def teacher_required(f):
+    """Decorator — restricts route to teacher role."""
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash('Please log in to access this page.', 'warning')
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_teacher:
+            flash('Access denied. Teachers only.', 'danger')
             return redirect(url_for('auth.login'))
-        if current_user.role != 'teacher':
-            flash('This page is for teachers only.', 'danger')
-            return redirect(url_for('game.challenges'))
         return f(*args, **kwargs)
-    return decorated_function
+    return decorated
 
 
-# =============================================================
-# REGISTER
-# =============================================================
+# ── Register ─────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -61,324 +66,174 @@ def register():
         confirm  = request.form.get('confirm_password', '')
         role     = request.form.get('role', 'student')
 
-        errors = []
-        if not username or len(username) < 3:
-            errors.append('Username must be at least 3 characters.')
-        if not email or '@' not in email:
-            errors.append('Please enter a valid email address.')
-        if len(password) < 8:
-            errors.append('Password must be at least 8 characters.')
+        # ── Validation ────────────────────────────────────────────────────────
+        if not username or not email or not password:
+            flash('All fields are required.', 'danger')
+            return render_template('register.html')
+
         if password != confirm:
-            errors.append('Passwords do not match.')
-        if role not in ['student', 'teacher']:
-            errors.append('Invalid role selected.')
+            flash('Passwords do not match.', 'danger')
+            return render_template('register.html')
+
+        pw_errors = _validate_password_strength(password)
+        if pw_errors:
+            for err in pw_errors:
+                flash(err, 'danger')
+            return render_template('register.html')
+
         if User.query.filter_by(email=email).first():
-            errors.append('An account with this email already exists.')
+            flash('An account with that email already exists.', 'danger')
+            return render_template('register.html')
+
         if User.query.filter_by(username=username).first():
-            errors.append('This username is already taken.')
+            flash('That username is already taken.', 'danger')
+            return render_template('register.html')
 
-        if errors:
-            for error in errors:
-                flash(error, 'danger')
-            return render_template('register.html', username=username, email=email, role=role)
+        # Only allow teacher role if a special code is provided (basic RBAC guard)
+        if role == 'teacher' and request.form.get('teacher_code') != 'CIHE-TEACH-2026':
+            flash('Invalid teacher registration code.', 'danger')
+            return render_template('register.html')
 
-        from app import bcrypt
-        password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
-        new_user = User(username=username, email=email,
-                        password_hash=password_hash, role=role)
-        db.session.add(new_user)
+        # ── Create user ───────────────────────────────────────────────────────
+        hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
+        user = User(username=username, email=email,
+                    password=hashed_pw, role=role)
+        db.session.add(user)
         db.session.commit()
 
-        login_user(new_user)
-        flash(f'Account created! Welcome, {username}. Please set up Google Authenticator.', 'success')
-        return redirect(url_for('auth.setup_2fa'))
+        flash('Account created successfully! Please log in.', 'success')
+        return redirect(url_for('auth.login'))
 
     return render_template('register.html')
 
 
-# =============================================================
-# LOGIN — with Remember Me
-# =============================================================
+# ── Login ─────────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@auth_bp.route('/', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        if current_user.role == 'teacher':
-            return redirect(url_for('admin.dashboard'))
         return redirect(url_for('game.challenges'))
 
     if request.method == 'POST':
-        username    = request.form.get('username', '').strip()
-        password    = request.form.get('password', '')
-        remember_me = request.form.get('remember_me') == 'on'
-        ip          = request.remote_addr
+        email    = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        ip       = request.remote_addr
 
-        user = User.query.filter_by(username=username).first()
+        # ── Brute-force lockout check ─────────────────────────────────────────
+        if is_account_locked(email):
+            flash('Account temporarily locked due to too many failed attempts. '
+                  'Please try again in 15 minutes.', 'danger')
+            log_login_attempt(email=email, ip=ip, success=False)
+            return render_template('login.html')
 
-        if not user:
-            log_login_attempt(None, False, ip)
-            flash('Invalid username or password.', 'danger')
-            return render_template('login.html', username=username)
+        user = User.query.filter_by(email=email).first()
 
-        from app import bcrypt
-        if not bcrypt.check_password_hash(user.password_hash, password):
-            user.login_attempts += 1
-            db.session.commit()
-            log_login_attempt(user.id, False, ip)
-            flash('Invalid username or password.', 'danger')
-            return render_template('login.html', username=username)
+        if user and bcrypt.check_password_hash(user.password, password):
+            log_login_attempt(email=email, ip=ip, success=True, user_id=user.id)
 
-        user.login_attempts = 0
-        db.session.commit()
-        log_login_attempt(user.id, True, ip)
+            # ── 2FA check ─────────────────────────────────────────────────────
+            if user.is_2fa_enabled:
+                session['pre_2fa_user_id'] = user.id
+                return redirect(url_for('auth.verify_2fa'))
 
-        session['pre_2fa_user_id']  = user.id
-        session['pre_2fa_remember'] = remember_me
-
-        if user.has_2fa_enabled():
-            return redirect(url_for('auth.verify_2fa'))
-        else:
-            login_user(user, remember=remember_me)
+            login_user(user)
             flash(f'Welcome back, {user.username}!', 'success')
-            return redirect(url_for('admin.dashboard') if user.role == 'teacher'
-                            else url_for('game.challenges'))
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('game.challenges'))
+
+        else:
+            log_login_attempt(email=email, ip=ip, success=False,
+                              user_id=user.id if user else None)
+            flash('Invalid email or password.', 'danger')
 
     return render_template('login.html')
 
 
-# =============================================================
-# LOGOUT — fixed to properly clear session and cookies
-# =============================================================
+# ── Logout ────────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
-    """
-    Proper logout that:
-    1. Captures username before clearing
-    2. Calls Flask-Login logout_user() to invalidate the login session
-    3. Completely clears the server-side session data
-    4. Deletes session and remember_token cookies from the browser
-    5. Redirects to login page (not index) so user clearly knows they are logged out
-    6. Cache-control headers are handled globally in app.py after_request
-    """
-    username = current_user.username
-    role     = current_user.role
-
-    # Step 1: Flask-Login logout — marks user as anonymous
     logout_user()
-
-    # Step 2: Wipe the entire server-side session
-    session.clear()
-
-    # Step 3: Build redirect response
-    # Teachers go to login, students go to login — both see the login page
-    # This makes it clear to the user they are now logged out
-    response = make_response(redirect(url_for('auth.login')))
-
-    # Step 4: Delete cookies from browser
-    response.delete_cookie('session')
-    response.delete_cookie('remember_token')
-
-    # Step 5: Cache-control to prevent back button from showing protected pages
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
-    response.headers['Pragma']        = 'no-cache'
-    response.headers['Expires']       = '0'
-
-    # Flash message will show on the login page
-    from flask import get_flashed_messages
-    from flask import flash as _flash
-    _flash(f'You have been logged out successfully. See you next time, {username}!', 'info')
-
-    return response
-
-# =============================================================
-# FORGOT PASSWORD
-# =============================================================
-
-@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        user  = User.query.filter_by(email=email).first()
-
-        flash('If an account exists with that email, a password reset link has been sent.', 'info')
-
-        if user:
-            token     = generate_reset_token(user.email)
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
-            send_reset_email(user, reset_url)
-
-        return redirect(url_for('auth.login'))
-
-    return render_template('forgot_password.html')
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('auth.login'))
 
 
-def generate_reset_token(email):
-    from itsdangerous import URLSafeTimedSerializer
-    from flask import current_app
-    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    return s.dumps(email, salt='password-reset-salt')
+# ── 2FA Setup ─────────────────────────────────────────────────────────────────
 
-
-def verify_reset_token(token, max_age=1800):
-    from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-    from flask import current_app
-    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    try:
-        email = s.loads(token, salt='password-reset-salt', max_age=max_age)
-    except (SignatureExpired, BadSignature):
-        return None
-    return email
-
-
-def send_reset_email(user, reset_url):
-    from flask_mail import Message
-    from app import mail
-    msg = Message(
-        subject='CyberQuest — Password Reset Request',
-        recipients=[user.email]
-    )
-    msg.html = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto;
-                background: #0D1B2A; color: #FFFFFF; padding: 30px; border-radius: 10px;
-                border: 2px solid #FFD700;">
-        <h2 style="color: #FFD700;">🛡️ CyberQuest Password Reset</h2>
-        <p>Hi <strong style="color: #FFD700;">{user.username}</strong>,</p>
-        <p>We received a request to reset your password. Click the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{reset_url}"
-               style="background-color: #FFD700; color: #0D1B2A; padding: 12px 30px;
-                      text-decoration: none; border-radius: 6px; font-weight: bold;">
-                Reset My Password
-            </a>
-        </div>
-        <p style="color: #A0B4C8; font-size: 0.9rem;">
-            This link expires in <strong style="color: #FFD700;">30 minutes</strong>.<br>
-            If you did not request this, you can safely ignore this email.
-        </p>
-        <hr style="border-color: #2A4A6F;">
-        <p style="color: #A0B4C8; font-size: 0.8rem; text-align: center;">
-            CyberQuest — ICT932 | Crown Institute of Higher Education (CIHE)
-        </p>
-    </div>
-    """
-    mail.send(msg)
-
-
-# =============================================================
-# RESET PASSWORD
-# =============================================================
-
-@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-
-    email = verify_reset_token(token)
-    if not email:
-        flash('The password reset link is invalid or has expired. Please request a new one.', 'danger')
-        return redirect(url_for('auth.forgot_password'))
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('auth.forgot_password'))
-
-    if request.method == 'POST':
-        password = request.form.get('password', '')
-        confirm  = request.form.get('confirm_password', '')
-
-        if len(password) < 8:
-            flash('Password must be at least 8 characters.', 'danger')
-            return render_template('reset_password.html', token=token)
-        if password != confirm:
-            flash('Passwords do not match.', 'danger')
-            return render_template('reset_password.html', token=token)
-
-        from app import bcrypt
-        user.password_hash  = bcrypt.generate_password_hash(password).decode('utf-8')
-        user.login_attempts = 0
-        db.session.commit()
-
-        flash('Password reset successfully! Please log in with your new password.', 'success')
-        return redirect(url_for('auth.login'))
-
-    return render_template('reset_password.html', token=token)
-
-
-# =============================================================
-# 2FA SETUP
-# =============================================================
-
-@auth_bp.route('/setup-2fa', methods=['GET', 'POST'])
+@auth_bp.route('/2fa/setup', methods=['GET', 'POST'])
 @login_required
 def setup_2fa():
-    import pyotp, qrcode, io, base64
-
     if request.method == 'POST':
-        code   = request.form.get('code', '').strip()
-        secret = request.form.get('secret', '').strip()
+        token = request.form.get('token', '').strip()
+        totp  = pyotp.TOTP(current_user.totp_secret)
 
-        if pyotp.TOTP(secret).verify(code):
-            current_user.totp_secret = secret
+        if totp.verify(token):
+            current_user.is_2fa_enabled = True
             db.session.commit()
-            flash('Google Authenticator has been linked to your account!', 'success')
-            return redirect(url_for('admin.dashboard') if current_user.role == 'teacher'
-                            else url_for('game.challenges'))
+            flash('Two-Factor Authentication enabled successfully! 🔐', 'success')
+            return redirect(url_for('game.challenges'))
         else:
             flash('Invalid code. Please try again.', 'danger')
-            return redirect(url_for('auth.setup_2fa'))
 
-    secret = pyotp.random_base32()
-    uri    = pyotp.TOTP(secret).provisioning_uri(
-                name=current_user.email, issuer_name='CyberQuest')
-    buf    = io.BytesIO()
-    qrcode.make(uri).save(buf, format='PNG')
+    # Generate a new TOTP secret if the user doesn't have one yet
+    if not current_user.totp_secret:
+        current_user.totp_secret = pyotp.random_base32()
+        db.session.commit()
+
+    totp        = pyotp.TOTP(current_user.totp_secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=current_user.email,
+        issuer_name='CyberQuest ICT932'
+    )
+
+    # Generate QR code as base64 image
+    qr  = qrcode.make(provisioning_uri)
+    buf = io.BytesIO()
+    qr.save(buf, format='PNG')
     qr_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
 
-    return render_template('2fa_setup.html', secret=secret, qr_code=qr_b64)
+    return render_template('2fa_setup.html',
+                           qr_code=qr_b64,
+                           secret=current_user.totp_secret)
 
 
-# =============================================================
-# 2FA VERIFY
-# =============================================================
+# ── 2FA Verify ────────────────────────────────────────────────────────────────
 
-@auth_bp.route('/verify-2fa', methods=['GET', 'POST'])
+@auth_bp.route('/2fa/verify', methods=['GET', 'POST'])
 def verify_2fa():
-    import pyotp
-
-    user_id  = session.get('pre_2fa_user_id')
-    remember = session.get('pre_2fa_remember', False)
-
+    user_id = session.get('pre_2fa_user_id')
     if not user_id:
-        flash('Session expired. Please log in again.', 'warning')
         return redirect(url_for('auth.login'))
 
     user = User.query.get(user_id)
     if not user:
-        flash('User not found. Please log in again.', 'danger')
+        session.pop('pre_2fa_user_id', None)
         return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
-        code = request.form.get('code', '').strip()
-        ip   = request.remote_addr
+        token = request.form.get('token', '').strip()
+        totp  = pyotp.TOTP(user.totp_secret)
 
-        if pyotp.TOTP(user.totp_secret).verify(code):
+        if totp.verify(token):
             session.pop('pre_2fa_user_id', None)
-            session.pop('pre_2fa_remember', None)
-            login_user(user, remember=remember)
-            log_login_attempt(user.id, True, ip)
-            flash(f'Welcome back, {user.username}!', 'success')
-            return redirect(url_for('admin.dashboard') if user.role == 'teacher'
-                            else url_for('game.challenges'))
+            login_user(user)
+            flash(f'Welcome back, {user.username}! ✅', 'success')
+            return redirect(url_for('game.challenges'))
         else:
-            user.login_attempts += 1
-            db.session.commit()
-            log_login_attempt(user.id, False, ip)
-            flash('Invalid code. Please check Google Authenticator and try again.', 'danger')
+            flash('Invalid authentication code. Please try again.', 'danger')
 
-    return render_template('2fa_verify.html', username=user.username)
+    return render_template('2fa_verify.html')
+
+
+# ── Profile / Disable 2FA ─────────────────────────────────────────────────────
+
+@auth_bp.route('/2fa/disable', methods=['POST'])
+@login_required
+def disable_2fa():
+    current_user.is_2fa_enabled = False
+    current_user.totp_secret    = None
+    db.session.commit()
+    flash('Two-Factor Authentication has been disabled.', 'warning')
+    return redirect(url_for('game.challenges'))

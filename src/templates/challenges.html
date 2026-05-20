@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CyberQuest Challenges</title>
+</head>
+
+<body>
+
+<h1>CyberQuest Challenges</h1>
+
+<a href="/">Home</a>
+
+<hr>
+
+{% for challenge in challenges %}
+
+<div style="border:1px solid black; padding:20px; margin:20px;">
+
+    <h2>{{ challenge.question }}</h2>
+
+    <p><strong>Category:</strong> {{ challenge.category }}</p>
+
+    <p>A. {{ challenge.option_a }}</p>
+    <p>B. {{ challenge.option_b }}</p>
+    <p>C. {{ challenge.option_c }}</p>
+    <p>D. {{ challenge.option_d }}</p>
+
+    <p><strong>Difficulty:</strong> {{ challenge.difficulty }}</p>
+
+    <p><strong>Points:</strong> {{ challenge.points }}</p>
+
+</div>
+
+{% endfor %}
+
+</body>
+</html>

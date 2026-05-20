@@ -1,79 +1,95 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}Login — CyberQuest{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-5">
-    <div class="card shadow-lg p-4 mt-4">
-      <div class="text-center mb-4">
-        <i class="bi bi-shield-lock-fill" style="font-size: 3rem; color: #FFD700;"></i>
-        <h2 class="mt-2" style="color: #FFD700;">Login to CyberQuest</h2>
-        <p style="color: #FFFFFF;">Enter your credentials to continue</p>
-      </div>
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 col-lg-4">
 
-      <form method="POST" action="{{ url_for('auth.login') }}">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4">
 
-        <!-- Username -->
-        <div class="mb-3">
-          <label for="username" style="color: #FFD700; font-weight: 600;">Username</label>
-          <input type="text" class="form-control form-control-lg" id="username"
-                 name="username" value="{{ username or '' }}"
-                 placeholder="Enter your username" required autofocus>
+        <!-- Header -->
+        <div class="text-center mb-4">
+          <span style="font-size:2.5rem;">🛡️</span>
+          <h3 class="fw-bold mt-2 mb-0">CyberQuest</h3>
+          <p class="text-muted small">Sign in to continue</p>
         </div>
 
-        <!-- Password -->
-        <div class="mb-3">
-          <label for="password" style="color: #FFD700; font-weight: 600;">Password</label>
-          <input type="password" class="form-control form-control-lg" id="password"
-                 name="password" placeholder="Enter your password" required>
-        </div>
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show py-2" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endwith %}
 
-        <!-- Remember Me + Forgot Password row -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox"
-                   id="remember_me" name="remember_me">
-            <label class="form-check-label" for="remember_me"
-                   style="color: #FFFFFF; cursor: pointer;">
-              Remember me
-            </label>
+        <!-- Login form -->
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label fw-semibold">Email address</label>
+            <input type="email" class="form-control" id="email" name="email"
+                   placeholder="you@example.com" required autocomplete="email">
           </div>
-          <a href="{{ url_for('auth.forgot_password') }}"
-             style="color: #FFD700; font-weight: 600; font-size: 0.9rem;">
-            Forgot password?
+
+          <div class="mb-3">
+            <label for="password" class="form-label fw-semibold">Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="password" name="password"
+                     placeholder="Your password" required autocomplete="current-password">
+              <button class="btn btn-outline-secondary" type="button" id="togglePw"
+                      title="Show/hide password">
+                <i class="bi bi-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+              Sign In
+            </button>
+          </div>
+        </form>
+
+        <hr class="my-4">
+
+        <p class="text-center mb-0 small">
+          Don't have an account?
+          <a href="{{ url_for('auth.register') }}" class="text-decoration-none fw-semibold">
+            Register here
           </a>
-        </div>
+        </p>
 
-        <!-- Submit -->
-        <div class="d-grid mt-3">
-          <button type="submit" class="btn btn-lg"
-                  style="background-color: #FFD700; color: #0D1B2A; font-weight: 700; font-size: 1.1rem;">
-            <i class="bi bi-box-arrow-in-right me-2"></i>Login
-          </button>
-        </div>
-      </form>
-
-      <hr style="border-color: #2A4A6F; margin: 24px 0;">
-      <p class="text-center mb-0" style="color: #FFFFFF;">
-        Don't have an account?
-        <a href="{{ url_for('auth.register') }}"
-           style="color: #FFD700; font-weight: 700;">Register here</a>
-      </p>
+      </div>
     </div>
 
-    <!-- Admin info box -->
-    <div class="card mt-3 p-3" style="border: 1px solid #FFD700;">
-      <div class="d-flex align-items-center gap-3">
-        <i class="bi bi-person-fill-gear"
-           style="font-size: 2rem; color: #FFD700; flex-shrink: 0;"></i>
-        <div>
-          <p class="mb-1" style="color: #FFD700; font-weight: 700;">Admin / Teacher Login</p>
-          <p class="mb-0" style="color: #FFFFFF; font-size: 0.9rem;">
-            Use your assigned teacher credentials above to access the teacher dashboard.
-          </p>
-        </div>
+    <!-- Demo accounts hint -->
+    <div class="card mt-3 border-0 bg-light">
+      <div class="card-body py-2 px-3">
+        <p class="mb-1 small fw-semibold text-muted">⚠️ Demo Accounts</p>
+        <p class="mb-0 small text-muted">
+          Student: <code>student@demo.com</code> / <code>Test1234!</code><br>
+          Teacher: <code>teacher@demo.com</code> / <code>Admin1234!</code>
+        </p>
       </div>
     </div>
 
   </div>
 </div>
+
+<script>
+  // Toggle password visibility
+  document.getElementById('togglePw').addEventListener('click', function () {
+    const pwField = document.getElementById('password');
+    const icon    = document.getElementById('eyeIcon');
+    if (pwField.type === 'password') {
+      pwField.type = 'text';
+      icon.className = 'bi bi-eye-slash';
+    } else {
+      pwField.type = 'password';
+      icon.className = 'bi bi-eye';
+    }
+  });
+</script>
 {% endblock %}

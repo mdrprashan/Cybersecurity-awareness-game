@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Results — CyberQuest{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="text-center mb-5">
+    {% if percentage >= 80 %}<div style="font-size:5rem;">🏆</div><h2 style="color:var(--cq-green);">Outstanding!</h2>
+    {% elif percentage >= 60 %}<div style="font-size:5rem;">⭐</div><h2 style="color:var(--cq-cyan);">Well Done!</h2>
+    {% elif percentage >= 40 %}<div style="font-size:5rem;">📚</div><h2 style="color:var(--cq-yellow);">Keep Practising!</h2>
+    {% else %}<div style="font-size:5rem;">💪</div><h2 style="color:var(--cq-red);">Keep Going!</h2>
+    {% endif %}
+    <p style="color:var(--cq-text-muted);" class="lead">Here's how you did across all challenges</p>
+  </div>
+
+  <div class="row g-3 justify-content-center mb-5">
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-yellow);">{{ total_score }}</div><div class="stat-label">Total Points</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-green);">{{ correct }}/{{ total_questions }}</div><div class="stat-label">Correct</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-cyan);">{{ percentage }}%</div><div class="stat-label">Accuracy</div></div></div>
+  </div>
+
+  {% if badges %}
+  <div class="card-cq p-4 mb-4 text-center">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">🏅 Badges Unlocked</h5>
+    <div class="d-flex flex-wrap gap-4 justify-content-center">
+      {% for ub in badges %}<div><div style="font-size:3rem;">{{ ub.badge.icon }}</div><div class="small fw-semibold" style="color:var(--cq-yellow);">{{ ub.badge.name }}</div></div>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card-cq p-4 mb-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">📖 Learn More — Cybersecurity Resources</h5>
+    <div class="row g-3">
+      <div class="col-md-4"><a href="https://www.nist.gov/cyberframework" target="_blank" class="card-cq d-block p-3 text-decoration-none" style="transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--cq-cyan)'" onmouseout="this.style.borderColor='var(--cq-border)'"><h6 style="color:var(--cq-cyan);">🏛️ NIST Cybersecurity Framework</h6><p style="color:var(--cq-text-muted);" class="small mb-0">Industry-standard framework for managing cybersecurity risk.</p></a></div>
+      <div class="col-md-4"><a href="https://owasp.org/www-project-top-ten/" target="_blank" class="card-cq d-block p-3 text-decoration-none" style="transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--cq-red)'" onmouseout="this.style.borderColor='var(--cq-border)'"><h6 style="color:var(--cq-red);">🔓 OWASP Top 10</h6><p style="color:var(--cq-text-muted);" class="small mb-0">The ten most critical web application security risks.</p></a></div>
+      <div class="col-md-4"><a href="https://www.cyber.gov.au/learn-basics" target="_blank" class="card-cq d-block p-3 text-decoration-none" style="transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--cq-green)'" onmouseout="this.style.borderColor='var(--cq-border)'"><h6 style="color:var(--cq-green);">🇦🇺 ASD Cyber Basics</h6><p style="color:var(--cq-text-muted);" class="small mb-0">Australian Signals Directorate cybersecurity guidance.</p></a></div>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <a href="{{ url_for('game.challenges') }}" class="btn btn-cq-primary btn-lg px-5 me-2">🎮 Play Again</a>
+    <a href="{{ url_for('game.progress') }}" class="btn btn-cq-outline btn-lg px-5">📊 My Progress</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ cat_info.label }} — CyberQuest{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <a href="{{ url_for('game.challenges') }}" class="btn btn-cq-outline btn-sm mb-4">
+    ← Back to Challenges
+  </a>
+
+  <h2 class="mb-1" style="color:var(--cq-cyan);">{{ cat_info.icon }} {{ cat_info.label }}</h2>
+  <p style="color:var(--cq-text-muted);" class="mb-4">Answer all questions to complete this category.</p>
+
+  {% for q in questions %}
+  <div class="card-cq mb-4 p-4"
+       style="{% if q.id in answered_ids %}border-left: 4px solid var(--cq-green);{% endif %}">
+
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <h5 class="fw-semibold mb-0">Q{{ loop.index }}. {{ q.question }}</h5>
+      <span class="ms-3 flex-shrink-0 badge-cq-cyan"
+            style="{% if q.difficulty == 'easy' %}color:var(--cq-green);background:rgba(0,230,118,0.1);border-color:rgba(0,230,118,0.3)
+                   {% elif q.difficulty == 'medium' %}color:var(--cq-yellow);background:rgba(255,214,10,0.1);border-color:rgba(255,214,10,0.3)
+                   {% else %}color:var(--cq-red);background:rgba(255,77,109,0.1);border-color:rgba(255,77,109,0.3){% endif %}">
+        {{ q.difficulty | capitalize }}
+      </span>
+    </div>
+
+    {% if q.id in answered_ids %}
+      <div style="background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);
+                  border-radius:8px; padding:0.75rem 1rem; color:var(--cq-green);">
+        ✅ Already answered
+        <span style="color:var(--cq-text-muted);" class="ms-2">
+          +{{ {'easy':10,'medium':20,'hard':30}[q.difficulty] }} pts
+        </span>
+      </div>
+    {% else %}
+      <form method="POST" action="{{ url_for('game.answer', challenge_id=q.id) }}">
+        <div class="row g-2 mb-3">
+          {% for opt_key, opt_label in [('A', q.option_a),('B', q.option_b),('C', q.option_c),('D', q.option_d)] %}
+          <div class="col-md-6">
+            <label class="d-flex align-items-start gap-2 p-3 rounded"
+                   style="border:1px solid var(--cq-border); cursor:pointer;
+                          background:var(--cq-navy-light); transition:border-color 0.2s;"
+                   onmouseover="this.style.borderColor='var(--cq-cyan)'"
+                   onmouseout="this.style.borderColor='var(--cq-border)'">
+              <input type="radio" name="answer" value="{{ opt_key }}" required class="mt-1 flex-shrink-0">
+              <span><strong style="color:var(--cq-cyan);">{{ opt_key }}.</strong> {{ opt_label }}</span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-cq-primary px-4">
+          Submit Answer
+          <span class="ms-2" style="opacity:0.75;font-size:0.85rem;">
+            +{{ {'easy':10,'medium':20,'hard':30}[q.difficulty] }} pts
+          </span>
+        </button>
+      </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('game.result') }}" class="btn btn-cq-outline px-5">
+      View My Results →
+    </a>
+  </div>
+
+</div>
+{% endblock %}

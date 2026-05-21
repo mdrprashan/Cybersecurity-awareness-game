@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Add Challenge — Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <a href="{{ url_for('admin.manage_challenges') }}" class="btn btn-cq-outline btn-sm mb-4">← Challenges</a>
+      <div class="card-cq p-4">
+        <h4 style="color:var(--cq-cyan);" class="mb-4">➕ Add New Challenge</h4>
+        <form method="POST">
+          <div class="row g-3">
+            {% set inp = "background:var(--cq-navy-light);border:1px solid var(--cq-border);color:var(--cq-text);border-radius:8px;" %}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Category</label>
+              <select name="category" class="form-select" style="{{ inp }}" required>
+                <option value="phishing">🎣 Phishing Awareness</option>
+                <option value="password">🔐 Password Security</option>
+                <option value="browsing">🌐 Safe Browsing</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Difficulty</label>
+              <select name="difficulty" class="form-select" style="{{ inp }}">
+                <option value="easy">Easy (+10 pts)</option>
+                <option value="medium" selected>Medium (+20 pts)</option>
+                <option value="hard">Hard (+30 pts)</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Question</label>
+              <textarea name="question" class="form-control" rows="3" style="{{ inp }}" required></textarea>
+            </div>
+            {% for ltr in ['A','B','C','D'] %}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Option {{ ltr }}</label>
+              <input type="text" name="option_{{ ltr|lower }}" class="form-control" style="{{ inp }}" required>
+            </div>
+            {% endfor %}
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Correct Answer</label>
+              <select name="correct_answer" class="form-select" style="{{ inp }}" required>
+                {% for l in ['A','B','C','D'] %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Explanation</label>
+              <textarea name="explanation" class="form-control" rows="2" style="{{ inp }}"></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-cq-primary btn-lg px-5">Add Challenge</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

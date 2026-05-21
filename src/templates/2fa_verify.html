@@ -2,63 +2,59 @@
 {% block title %}Verify 2FA — CyberQuest{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-  <div class="col-md-5 col-lg-4">
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+      <div class="card-cq p-4 text-center">
 
-    <div class="card shadow-sm border-0">
-      <div class="card-body p-4 text-center">
-
-        <span style="font-size:3rem;">🔑</span>
-        <h3 class="fw-bold mt-2 mb-1">Two-Factor Authentication</h3>
-        <p class="text-muted small mb-4">
-          Open your authenticator app and enter the 6-digit code for CyberQuest.
+        <div style="font-size:3.5rem; filter:drop-shadow(0 0 12px var(--cq-cyan));">🔑</div>
+        <h3 style="color:var(--cq-cyan); font-size:1.5rem;" class="mt-2 mb-1">
+          Two-Factor Authentication
+        </h3>
+        <p style="color:var(--cq-text-sub); font-size:0.95rem;" class="mb-4">
+          Open your authenticator app and enter the 6-digit code for <strong style="color:var(--cq-text);">CyberQuest ICT932</strong>
         </p>
-
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show py-2" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
-        {% endwith %}
 
         <form method="POST" action="{{ url_for('auth.verify_2fa') }}">
           <div class="mb-4">
-            <input type="text" class="form-control form-control-lg text-center fw-bold"
-                   name="token" id="token"
-                   placeholder="000000" maxlength="6" pattern="[0-9]{6}"
-                   autocomplete="one-time-code" required
-                   style="font-size:2rem; letter-spacing:0.6rem;">
+            <input type="text" name="token" id="token"
+                   class="form-control form-cq text-center fw-bold"
+                   style="font-size:2.2rem; letter-spacing:0.7rem; height:72px;"
+                   placeholder="000000"
+                   maxlength="6" pattern="[0-9]{6}"
+                   autocomplete="one-time-code"
+                   inputmode="numeric"
+                   required>
+            <div class="mt-2" style="color:var(--cq-text-muted); font-size:0.85rem;">
+              Code refreshes every 30 seconds
+            </div>
           </div>
           <div class="d-grid">
-            <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+            <button type="submit" class="btn btn-cq-primary btn-lg fw-bold"
+                    style="font-size:1.1rem; padding:0.75rem;">
               Verify Code
             </button>
           </div>
         </form>
 
-        <hr class="my-3">
+        <hr style="border-color:var(--cq-border);" class="my-3">
 
-        <a href="{{ url_for('auth.login') }}" class="small text-decoration-none text-muted">
+        <a href="{{ url_for('auth.login') }}"
+           style="color:var(--cq-text-muted); font-size:0.9rem; text-decoration:none;">
           ← Back to login
         </a>
 
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-  const tokenInput = document.getElementById('token');
-  tokenInput.focus();
-  tokenInput.addEventListener('input', function () {
+  const tok = document.getElementById('token');
+  tok.focus();
+  tok.addEventListener('input', function () {
     this.value = this.value.replace(/\D/g, '');
-    if (this.value.length === 6) {
-      this.closest('form').submit();
-    }
+    if (this.value.length === 6) this.closest('form').submit();
   });
 </script>
 {% endblock %}

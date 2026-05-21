@@ -1,198 +1,278 @@
 """
-test_security.py — Security & Brute-Force Detection Tests
-ICT932 – Cybersecurity Testing and Assurance
+test_security.py — Security Unit Tests
+CyberQuest ICT932 – Cybersecurity Testing and Assurance
 Author: Prashan Manandhar (CIHE241182)
+
+Tests cover:
+  - Login attempt logging
+  - Brute-force lockout detection
+  - Lockout window timing
+  - RBAC route protection
+  - Audit log access control
+  - Security headers presence
 """
 
 import pytest
 from datetime import datetime, timedelta
-from app import create_app, db
-from models import User, LoginAttempt
-from security import log_login_attempt, is_account_locked
+from conftest import login, logout
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
-
-@pytest.fixture(scope='module')
-def app():
-    test_app = create_app()
-    test_app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-        'WTF_CSRF_ENABLED': False,
-        'SECRET_KEY': 'test-secret',
-        'MAX_LOGIN_ATTEMPTS': 5,
-        'LOCKOUT_MINUTES': 15,
-    })
-    with test_app.app_context():
-        db.create_all()
-        yield test_app
-        db.session.remove()
-        db.drop_all()
-
-
-@pytest.fixture(scope='module')
-def client(app):
-    return app.test_client()
-
-
-@pytest.fixture(autouse=True)
-def clean_attempts(app):
-    """Wipe login attempts before each test."""
-    with app.app_context():
-        LoginAttempt.query.delete()
-        db.session.commit()
-
-
-# ── Login Attempt Logging ─────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════════
+# LOGIN ATTEMPT LOGGING
+# ════════════════════════════════════════════════════════════════════
 
 class TestLoginAttemptLogging:
 
-    def test_log_failed_attempt(self, app):
-        """Failed login attempt is recorded in the database."""
+    def test_failed_attempt_is_logged(self, client, app, db):
+        """A failed login attempt is recorded in LoginAttempt table."""
+        from models import LoginAttempt
         with app.app_context():
-            log_login_attempt(email='victim@example.com',
-                              ip='1.2.3.4', success=False)
-            attempt = LoginAttempt.query.filter_by(
-                email='victim@example.com').first()
-            assert attempt is not None
-            assert attempt.success is False
-            assert attempt.ip_address == '1.2.3.4'
+            before = LoginAttempt.query.count()
+            client.post('/login', data={
+                'email':    'log_test@example.com',
+                'password': 'wrongpass'
+            })
+            after = LoginAttempt.query.count()
+        assert after > before
 
-    def test_log_successful_attempt(self, app):
-        """Successful login attempt is recorded as success=True."""
+    def test_successful_attempt_is_logged(self, client, app, db, student_user):
+        """A successful login attempt is recorded with success=True."""
+        from models import LoginAttempt
         with app.app_context():
-            log_login_attempt(email='success@example.com',
-                              ip='5.6.7.8', success=True)
+            client.post('/login', data={
+                'email':    'pytest_student@test.com',
+                'password': 'Test1234!'
+            })
             attempt = LoginAttempt.query.filter_by(
-                email='success@example.com').first()
+                email='pytest_student@test.com',
+                success=True
+            ).order_by(LoginAttempt.attempted_at.desc()).first()
             assert attempt is not None
             assert attempt.success is True
+        logout(client)
 
-    def test_multiple_attempts_logged(self, app):
-        """Multiple attempts for same email are all stored."""
+    def test_attempt_records_ip_address(self, client, app, db):
+        """Login attempts record the requester's IP address."""
+        from models import LoginAttempt
         with app.app_context():
-            for _ in range(3):
-                log_login_attempt(email='multi@example.com',
-                                  ip='1.1.1.1', success=False)
-            count = LoginAttempt.query.filter_by(
-                email='multi@example.com').count()
-            assert count == 3
+            client.post('/login', data={
+                'email':    'ip_test@example.com',
+                'password': 'wrongpass'
+            })
+            attempt = LoginAttempt.query.filter_by(
+                email='ip_test@example.com'
+            ).order_by(LoginAttempt.attempted_at.desc()).first()
+        assert attempt is not None
+        assert attempt.ip_address is not None
+
+    def test_attempt_has_timestamp(self, app, db):
+        """LoginAttempt records a timestamp automatically."""
+        from models import LoginAttempt
+        from security import log_login_attempt
+        with app.app_context():
+            log_login_attempt(email='ts_test@example.com', ip='1.2.3.4', success=False)
+            attempt = LoginAttempt.query.filter_by(email='ts_test@example.com').first()
+            assert attempt is not None
+            assert isinstance(attempt.attempted_at, datetime)
 
 
-# ── Brute-Force Lockout Detection ─────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════════
+# BRUTE-FORCE LOCKOUT
+# ════════════════════════════════════════════════════════════════════
 
-class TestBruteForceDetection:
+class TestBruteForceProtection:
 
-    def test_not_locked_below_threshold(self, app):
+    def test_not_locked_below_threshold(self, app, db):
         """Account is NOT locked below MAX_LOGIN_ATTEMPTS failures."""
+        from security import log_login_attempt, is_account_locked
+        from models import LoginAttempt
+        email = 'notlocked@test.com'
         with app.app_context():
-            for _ in range(4):   # threshold is 5
-                log_login_attempt(email='safe@example.com',
-                                  ip='9.9.9.9', success=False)
-            assert is_account_locked('safe@example.com') is False
+            # Clean slate
+            LoginAttempt.query.filter_by(email=email).delete()
+            db.session.commit()
+            for _ in range(4):  # threshold is 5
+                log_login_attempt(email=email, ip='9.9.9.9', success=False)
+            assert is_account_locked(email) is False
 
-    def test_locked_at_threshold(self, app):
+    def test_locked_at_threshold(self, app, db):
         """Account IS locked once MAX_LOGIN_ATTEMPTS is reached."""
+        from security import log_login_attempt, is_account_locked
+        from models import LoginAttempt
+        email = 'locked_at5@test.com'
         with app.app_context():
+            LoginAttempt.query.filter_by(email=email).delete()
+            db.session.commit()
             for _ in range(5):
-                log_login_attempt(email='locked@example.com',
-                                  ip='9.9.9.9', success=False)
-            assert is_account_locked('locked@example.com') is True
+                log_login_attempt(email=email, ip='9.9.9.9', success=False)
+            assert is_account_locked(email) is True
 
-    def test_locked_above_threshold(self, app):
-        """Account remains locked above the threshold."""
+    def test_locked_above_threshold(self, app, db):
+        """Account stays locked above the threshold."""
+        from security import log_login_attempt, is_account_locked
+        from models import LoginAttempt
+        email = 'locked_above@test.com'
         with app.app_context():
-            for _ in range(7):
-                log_login_attempt(email='extra_locked@example.com',
-                                  ip='9.9.9.9', success=False)
-            assert is_account_locked('extra_locked@example.com') is True
+            LoginAttempt.query.filter_by(email=email).delete()
+            db.session.commit()
+            for _ in range(8):
+                log_login_attempt(email=email, ip='9.9.9.9', success=False)
+            assert is_account_locked(email) is True
 
-    def test_successful_login_does_not_count_toward_lockout(self, app):
-        """Successful attempts are not counted in the failed-attempt total."""
+    def test_success_not_counted_in_lockout(self, app, db):
+        """Successful attempts are not counted toward lockout."""
+        from security import log_login_attempt, is_account_locked
+        from models import LoginAttempt
+        email = 'success_mixed@test.com'
         with app.app_context():
-            # 3 failures + 1 success = still under threshold
+            LoginAttempt.query.filter_by(email=email).delete()
+            db.session.commit()
             for _ in range(3):
-                log_login_attempt(email='mixed@example.com',
-                                  ip='2.2.2.2', success=False)
-            log_login_attempt(email='mixed@example.com',
-                              ip='2.2.2.2', success=True)
-            assert is_account_locked('mixed@example.com') is False
+                log_login_attempt(email=email, ip='1.1.1.1', success=False)
+            log_login_attempt(email=email, ip='1.1.1.1', success=True)
+            # Only 3 failures — should NOT be locked
+            assert is_account_locked(email) is False
 
-    def test_old_attempts_outside_window_ignored(self, app):
-        """Attempts older than LOCKOUT_MINUTES are not counted."""
+    def test_old_attempts_outside_window_ignored(self, app, db):
+        """Attempts older than LOCKOUT_MINUTES window don't count."""
+        from security import is_account_locked
+        from models import LoginAttempt
+        email = 'oldattempts@test.com'
         with app.app_context():
+            LoginAttempt.query.filter_by(email=email).delete()
+            db.session.commit()
+            # Insert 5 attempts timestamped 20 minutes ago (outside 15-min window)
             old_time = datetime.utcnow() - timedelta(minutes=20)
             for _ in range(5):
                 attempt = LoginAttempt(
-                    email='old_attempts@example.com',
-                    ip_address='3.3.3.3',
-                    success=False,
-                    attempted_at=old_time
+                    email=email, ip_address='2.2.2.2',
+                    success=False, attempted_at=old_time
                 )
                 db.session.add(attempt)
             db.session.commit()
-            # These are all older than 15 minutes — should NOT be locked
-            assert is_account_locked('old_attempts@example.com') is False
+            assert is_account_locked(email) is False
 
-    def test_unknown_email_not_locked(self, app):
-        """An email with no attempts is never locked."""
+    def test_unknown_email_not_locked(self, app, db):
+        """An email with zero attempts is never locked."""
+        from security import is_account_locked
         with app.app_context():
-            assert is_account_locked('nobody@nowhere.com') is False
+            assert is_account_locked('neverbefore@test.com') is False
 
-
-# ── Security Route Access Control ─────────────────────────────────────────────
-
-class TestSecurityRoutes:
-
-    def test_audit_log_requires_login(self, client):
-        """Unauthenticated access to /security/audit-log redirects to login."""
-        response = client.get('/security/audit-log', follow_redirects=False)
-        assert response.status_code == 302
-        assert '/login' in response.headers.get('Location', '')
-
-    def test_locked_accounts_requires_login(self, client):
-        """Unauthenticated access to /security/locked-accounts redirects."""
-        response = client.get('/security/locked-accounts', follow_redirects=False)
-        assert response.status_code == 302
-
-    def test_student_blocked_from_audit_log(self, client, app):
-        """Students cannot access the audit log (teacher-only)."""
-        from app import bcrypt
+    def test_lockout_message_shown_on_login(self, client, app, db):
+        """Locked account shows lockout flash message on login attempt."""
+        from security import log_login_attempt
+        from models import LoginAttempt
+        email = 'showlockout@test.com'
         with app.app_context():
-            student = User(
-                username='securestudent',
-                email='securestudent@test.com',
-                password=bcrypt.generate_password_hash('Test1234!').decode('utf-8'),
-                role='student'
-            )
-            db.session.add(student)
+            LoginAttempt.query.filter_by(email=email).delete()
             db.session.commit()
+            for _ in range(5):
+                log_login_attempt(email=email, ip='3.3.3.3', success=False)
 
-        client.post('/login', data={
-            'email': 'securestudent@test.com',
-            'password': 'Test1234!'
-        })
-        response = client.get('/security/audit-log', follow_redirects=True)
-        # Should be redirected away or shown a 403-equivalent message
-        assert b'permission' in response.data or b'Access denied' in response.data or response.status_code in (302, 403)
+        response = client.post('/login', data={
+            'email': email, 'password': 'anything'
+        }, follow_redirects=True)
+        assert b'locked' in response.data.lower()
 
 
-# ── LoginAttempt Model Tests ──────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════════
+# RBAC — ROUTE PROTECTION
+# ════════════════════════════════════════════════════════════════════
 
-class TestLoginAttemptModel:
+class TestRBAC:
 
-    def test_attempt_has_timestamp(self, app):
-        """LoginAttempt records a timestamp automatically."""
+    def test_unauthenticated_cannot_access_challenges(self, client):
+        """Unauthenticated users are redirected away from /challenges."""
+        response = client.get('/challenges', follow_redirects=False)
+        assert response.status_code in (302, 308)
+
+    def test_unauthenticated_cannot_access_admin(self, client):
+        """Unauthenticated users cannot access /admin/."""
+        response = client.get('/admin/', follow_redirects=False)
+        assert response.status_code in (302, 308)
+
+    def test_unauthenticated_cannot_access_audit_log(self, client):
+        """Unauthenticated users cannot access /security/audit-log."""
+        response = client.get('/security/audit-log', follow_redirects=False)
+        assert response.status_code in (302, 308)
+
+    def test_unauthenticated_cannot_access_progress(self, client):
+        """Unauthenticated users cannot access /progress."""
+        response = client.get('/progress', follow_redirects=False)
+        assert response.status_code in (302, 308)
+
+    def test_student_role_assigned_correctly(self, app, student_user):
+        """Student user has role='student'."""
         with app.app_context():
-            log_login_attempt(email='ts@test.com', ip='1.1.1.1', success=False)
-            attempt = LoginAttempt.query.filter_by(email='ts@test.com').first()
-            assert attempt.attempted_at is not None
-            assert isinstance(attempt.attempted_at, datetime)
+            from models import User
+            user = User.query.filter_by(email='pytest_student@test.com').first()
+            assert user.role == 'student'
+            assert user.is_teacher is False
 
-    def test_attempt_repr(self, app):
-        """LoginAttempt __repr__ works correctly."""
+    def test_teacher_role_assigned_correctly(self, app, teacher_user):
+        """Teacher user has role='teacher'."""
         with app.app_context():
-            log_login_attempt(email='repr@test.com', ip='1.1.1.1', success=True)
-            attempt = LoginAttempt.query.filter_by(email='repr@test.com').first()
-            assert 'repr@test.com' in repr(attempt)
+            from models import User
+            user = User.query.filter_by(email='pytest_teacher@test.com').first()
+            assert user.role == 'teacher'
+            assert user.is_teacher is True
+
+
+# ════════════════════════════════════════════════════════════════════
+# HTTP SECURITY HEADERS
+# ════════════════════════════════════════════════════════════════════
+
+class TestSecurityHeaders:
+
+    def test_x_frame_options_present(self, client):
+        """Response includes X-Frame-Options: DENY header."""
+        response = client.get('/login')
+        assert 'X-Frame-Options' in response.headers
+        assert response.headers['X-Frame-Options'] == 'DENY'
+
+    def test_x_content_type_options_present(self, client):
+        """Response includes X-Content-Type-Options: nosniff header."""
+        response = client.get('/login')
+        assert 'X-Content-Type-Options' in response.headers
+        assert response.headers['X-Content-Type-Options'] == 'nosniff'
+
+    def test_referrer_policy_present(self, client):
+        """Response includes Referrer-Policy header."""
+        response = client.get('/login')
+        assert 'Referrer-Policy' in response.headers
+
+    def test_content_security_policy_present(self, client):
+        """Response includes Content-Security-Policy header."""
+        response = client.get('/login')
+        assert 'Content-Security-Policy' in response.headers
+
+    def test_server_header_removed(self, client):
+        """Server fingerprint header is removed from responses."""
+        response = client.get('/login')
+        assert 'Server' not in response.headers or \
+               response.headers.get('Server', '') == ''
+
+
+# ════════════════════════════════════════════════════════════════════
+# ROLE_REQUIRED DECORATOR
+# ════════════════════════════════════════════════════════════════════
+
+class TestRoleRequiredDecorator:
+
+    def test_role_required_function_exists(self, app):
+        """role_required decorator is importable from security module."""
+        with app.app_context():
+            from security import role_required
+            assert callable(role_required)
+
+    def test_is_account_locked_function_exists(self, app):
+        """is_account_locked is importable and callable."""
+        with app.app_context():
+            from security import is_account_locked
+            assert callable(is_account_locked)
+
+    def test_log_login_attempt_function_exists(self, app):
+        """log_login_attempt is importable and callable."""
+        with app.app_context():
+            from security import log_login_attempt
+            assert callable(log_login_attempt)

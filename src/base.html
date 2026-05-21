@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<!--
+    base.html — Shared base template for CyberQuest
+    Authors: Susanta Dhakal (CIHE250321) & Pramesh Silwal (CIHE241339)
+    Fixed: Prashan Manandhar (CIHE241182)
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CyberQuest{% endblock %} | ICT932</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Design Tokens ───────────────────────────────────────────── */
+        :root {
+            --cq-navy:       #0D1B2A;
+            --cq-navy-mid:   #112233;
+            --cq-navy-light: #1A2E42;
+            --cq-cyan:       #00B4D8;
+            --cq-cyan-glow:  #00D4FF;
+            --cq-green:      #00E676;
+            --cq-red:        #FF4D6D;
+            --cq-yellow:     #FFD60A;
+            --cq-text:       #E0EAF4;
+            --cq-text-sub:   #A8C4D8;   /* secondary text — readable but softer */
+            --cq-text-muted: #7A9BB5;   /* hints, dates only */
+            --cq-border:     rgba(0, 180, 216, 0.25);
+            --cq-shadow:     0 4px 24px rgba(0, 180, 216, 0.12);
+            --cq-radius:     12px;
+            --font-heading:  'Orbitron', monospace;
+            --font-body:     'Rajdhani', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--cq-navy);
+            color: var(--cq-text);
+            font-family: var(--font-body);
+            font-size: 1.05rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
+        main { flex: 1; }
+
+        /* ── Navbar ──────────────────────────────────────────────────── */
+        .navbar-cyberquest {
+            background: rgba(13,27,42,0.97);
+            border-bottom: 2px solid var(--cq-border);
+            backdrop-filter: blur(10px);
+            padding: 0.85rem 0;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .navbar-brand-cq {
+            font-family: var(--font-heading); font-weight: 800;
+            font-size: 1.4rem; color: var(--cq-cyan) !important;
+            text-decoration: none; letter-spacing: 2px;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .navbar-brand-cq .brand-icon {
+            color: var(--cq-cyan-glow); font-size: 1.6rem;
+            filter: drop-shadow(0 0 8px var(--cq-cyan));
+        }
+        .navbar-brand-cq:hover { color: var(--cq-cyan-glow) !important; }
+        .nav-link-cq {
+            color: var(--cq-text-sub) !important;
+            font-family: var(--font-body); font-weight: 600;
+            font-size: 1rem; letter-spacing: 0.5px;
+            padding: 0.5rem 1rem !important;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .nav-link-cq:hover, .nav-link-cq.active {
+            color: var(--cq-cyan) !important;
+            background: rgba(0,180,216,0.1);
+        }
+        .btn-nav-login {
+            border: 1px solid var(--cq-cyan); color: var(--cq-cyan);
+            background: transparent; border-radius: 6px;
+            padding: 0.45rem 1.1rem; font-weight: 600; font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .btn-nav-login:hover { background: rgba(0,180,216,0.15); color: var(--cq-cyan-glow); }
+        .btn-nav-register {
+            background: var(--cq-cyan); color: var(--cq-navy);
+            border: none; border-radius: 6px;
+            padding: 0.45rem 1.1rem; font-weight: 700; font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .btn-nav-register:hover { background: var(--cq-cyan-glow); box-shadow: 0 4px 12px rgba(0,180,216,0.4); }
+        .navbar-username { color: var(--cq-text-sub); font-size: 0.9rem; font-weight: 500; }
+        .navbar-username strong { color: var(--cq-cyan); }
+        .navbar-toggler { border-color: var(--cq-border); }
+        .navbar-toggler-icon { filter: invert(60%) sepia(80%) saturate(400%) hue-rotate(165deg); }
+
+        /* ── Flash Messages ──────────────────────────────────────────── */
+        .flash-container { padding: 0.5rem 0; }
+        .alert-cq {
+            border-left: 4px solid;
+            border-radius: 0 var(--cq-radius) var(--cq-radius) 0;
+            background: var(--cq-navy-mid);
+            color: var(--cq-text);
+            border-top: none; border-right: none; border-bottom: none;
+            font-weight: 500; font-size: 1rem;
+        }
+        .alert-cq.alert-success { border-color: var(--cq-green); }
+        .alert-cq.alert-danger  { border-color: var(--cq-red); }
+        .alert-cq.alert-info    { border-color: var(--cq-cyan); }
+        .alert-cq.alert-warning { border-color: var(--cq-yellow); }
+
+        /* ── Cards ───────────────────────────────────────────────────── */
+        .card-cq {
+            background: var(--cq-navy-mid);
+            border: 1px solid var(--cq-border);
+            border-radius: var(--cq-radius);
+            color: var(--cq-text);
+            box-shadow: var(--cq-shadow);
+        }
+
+        /* ── Tables — HIGH CONTRAST ──────────────────────────────────── */
+        .table-cq { color: var(--cq-text); font-size: 1rem; }
+        .table-cq thead th {
+            background: var(--cq-navy-light);
+            color: var(--cq-cyan);
+            border-color: var(--cq-border);
+            font-family: var(--font-heading);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            padding: 0.9rem 0.75rem;
+            white-space: nowrap;
+        }
+        .table-cq tbody td {
+            border-color: rgba(0,180,216,0.1);
+            padding: 0.85rem 0.75rem;
+            color: var(--cq-text);          /* full bright white for all cell text */
+            font-size: 0.98rem;
+            vertical-align: middle;
+        }
+        .table-cq tbody tr:hover { background: rgba(0,180,216,0.06); }
+        .table-cq .text-sub { color: var(--cq-text-sub) !important; } /* email etc */
+
+        /* ── Progress Bars — VISIBLE ─────────────────────────────────── */
+        .progress-cq {
+            background: rgba(255,255,255,0.12);   /* visible track on dark bg */
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+        .progress-cq .progress-bar {
+            background: linear-gradient(90deg, var(--cq-cyan), var(--cq-green));
+            border-radius: 10px;
+            min-width: 4px;                        /* always show a sliver */
+        }
+
+        /* ── Stat Cards ──────────────────────────────────────────────── */
+        .stat-card {
+            background: var(--cq-navy-mid);
+            border: 1px solid var(--cq-border);
+            border-radius: var(--cq-radius);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .stat-card:hover { border-color: var(--cq-cyan); transform: translateY(-2px); }
+        .stat-card .stat-number {
+            font-family: var(--font-heading);
+            font-size: 2.2rem; font-weight: 800;
+        }
+        .stat-card .stat-label {
+            color: var(--cq-text-sub);
+            font-size: 0.9rem; margin-top: 0.25rem;
+        }
+
+        /* ── Buttons ─────────────────────────────────────────────────── */
+        .btn-cq-primary {
+            background: var(--cq-cyan); color: var(--cq-navy);
+            border: none; font-weight: 700; border-radius: 8px;
+            font-family: var(--font-body); font-size: 1rem;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.2s;
+        }
+        .btn-cq-primary:hover { background: var(--cq-cyan-glow); box-shadow: 0 4px 16px rgba(0,180,216,0.4); }
+        .btn-cq-outline {
+            border: 1px solid var(--cq-cyan); color: var(--cq-cyan);
+            background: transparent; border-radius: 8px;
+            font-weight: 600; font-size: 1rem;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.2s;
+        }
+        .btn-cq-outline:hover { background: rgba(0,180,216,0.12); color: var(--cq-cyan-glow); }
+        .btn-cq-danger {
+            border: 1px solid var(--cq-red); color: var(--cq-red);
+            background: transparent; border-radius: 8px;
+            font-weight: 600; transition: all 0.2s;
+        }
+        .btn-cq-danger:hover { background: rgba(255,77,109,0.12); }
+
+        /* ── Inline Badges ───────────────────────────────────────────── */
+        .badge-cq-cyan {
+            background: rgba(0,180,216,0.18);
+            color: var(--cq-cyan);
+            border: 1px solid rgba(0,180,216,0.35);
+            border-radius: 20px; padding: 0.3rem 0.85rem;
+            font-size: 0.85rem; font-weight: 600; display: inline-block;
+        }
+        .badge-cq-gold {
+            background: rgba(255,214,10,0.18);
+            color: var(--cq-yellow);
+            border: 1px solid rgba(255,214,10,0.35);
+            border-radius: 20px; padding: 0.3rem 0.85rem;
+            font-size: 0.85rem; font-weight: 600; display: inline-block;
+        }
+
+        /* ── Status Badges (accuracy / difficulty) ───────────────────── */
+        .badge-success-cq { background:rgba(0,230,118,0.15); color:var(--cq-green); border:1px solid rgba(0,230,118,0.35); border-radius:20px; padding:0.25rem 0.8rem; font-size:0.85rem; font-weight:700; }
+        .badge-warn-cq    { background:rgba(255,214,10,0.15); color:var(--cq-yellow); border:1px solid rgba(255,214,10,0.35); border-radius:20px; padding:0.25rem 0.8rem; font-size:0.85rem; font-weight:700; }
+        .badge-danger-cq  { background:rgba(255,77,109,0.15); color:var(--cq-red); border:1px solid rgba(255,77,109,0.35); border-radius:20px; padding:0.25rem 0.8rem; font-size:0.85rem; font-weight:700; }
+        .badge-info-cq    { background:rgba(0,180,216,0.15); color:var(--cq-cyan); border:1px solid rgba(0,180,216,0.35); border-radius:20px; padding:0.25rem 0.8rem; font-size:0.85rem; font-weight:700; }
+
+        /* ── Form controls ───────────────────────────────────────────── */
+        .form-cq {
+            background: var(--cq-navy-light) !important;
+            border: 1px solid var(--cq-border) !important;
+            color: var(--cq-text) !important;
+            border-radius: 8px !important;
+            font-size: 1rem !important;
+        }
+        .form-cq:focus {
+            border-color: var(--cq-cyan) !important;
+            box-shadow: 0 0 0 3px rgba(0,180,216,0.2) !important;
+            background: var(--cq-navy-light) !important;
+            color: var(--cq-text) !important;
+        }
+        .form-cq::placeholder { color: var(--cq-text-muted) !important; }
+
+        /* ── Footer ──────────────────────────────────────────────────── */
+        .footer-cq {
+            background: var(--cq-navy-mid);
+            border-top: 1px solid var(--cq-border);
+            padding: 1.5rem 0; margin-top: auto;
+        }
+        .footer-brand { font-family: var(--font-heading); font-weight: 800; color: var(--cq-cyan); font-size: 1rem; letter-spacing: 2px; }
+        .footer-text  { color: var(--cq-text-sub); font-size: 0.88rem; }
+        .footer-team  { color: var(--cq-cyan); font-size: 0.88rem; font-weight: 600; }
+
+        /* ── Scrollbar ───────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--cq-navy); }
+        ::-webkit-scrollbar-thumb { background: var(--cq-navy-light); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cq-cyan); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-cyberquest">
+    <div class="container">
+        <a class="navbar-brand-cq"
+           href="{{ url_for('auth.login') if not current_user.is_authenticated
+                   else (url_for('admin.dashboard') if current_user.role == 'teacher'
+                         else url_for('game.challenges')) }}">
+            <i class="bi bi-shield-fill-check brand-icon"></i>
+            CYBER<span style="color:#fff;">QUEST</span>
+        </a>
+
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            {% if current_user.is_authenticated %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if current_user.role == 'teacher' %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-cq" href="{{ url_for('admin.dashboard') }}">
+                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-cq" href="{{ url_for('admin.manage_challenges') }}">
+                            <i class="bi bi-puzzle me-1"></i>Challenges
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-cq" href="{{ url_for('security.audit_log') }}">
+                            <i class="bi bi-shield-lock me-1"></i>Audit Log
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-cq" href="{{ url_for('game.challenges') }}">
+                            <i class="bi bi-controller me-1"></i>Challenges
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-cq" href="{{ url_for('game.progress') }}">
+                            <i class="bi bi-bar-chart-fill me-1"></i>My Progress
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-cq" href="{{ url_for('game.result') }}">
+                            <i class="bi bi-trophy me-1"></i>Results
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <ul class="navbar-nav me-auto"></ul>
+            {% endif %}
+
+            <div class="d-flex align-items-center gap-2">
+                {% if current_user.is_authenticated %}
+                    <span class="navbar-username d-none d-md-inline">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <strong>{{ current_user.username }}</strong>
+                        <span class="ms-1" style="background:rgba(0,180,216,0.18);
+                               color:var(--cq-cyan); border-radius:20px;
+                               padding:0.15rem 0.6rem; font-size:0.75rem; font-weight:700;">
+                            {{ current_user.role | capitalize }}
+                        </span>
+                    </span>
+                    <!-- 2FA icon — shows for all users -->
+                    <a href="{{ url_for('auth.setup_2fa') }}"
+                       class="btn-nav-login btn"
+                       title="{{ '2FA Enabled ✅' if current_user.is_2fa_enabled else 'Set Up 2FA ⚠️' }}"
+                       style="{% if current_user.is_2fa_enabled %}color:var(--cq-green);border-color:var(--cq-green);{% else %}color:var(--cq-yellow);border-color:var(--cq-yellow);{% endif %}">
+                        <i class="bi bi-shield-lock{% if current_user.is_2fa_enabled %}-fill{% endif %}"></i>
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn-nav-login btn">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn-nav-login btn">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn-nav-register btn">
+                        Register
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Flash Messages ─────────────────────────────────────────────────── -->
+<div class="flash-container">
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-cq alert-{{ category }} alert-dismissible fade show mt-2" role="alert">
+                    {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2" style="color:var(--cq-green)"></i>
+                    {% elif category == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--cq-red)"></i>
+                    {% elif category == 'info' %}<i class="bi bi-info-circle-fill me-2" style="color:var(--cq-cyan)"></i>
+                    {% else %}<i class="bi bi-exclamation-circle-fill me-2" style="color:var(--cq-yellow)"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+<!-- ── Main Content ───────────────────────────────────────────────────── -->
+<main>{% block content %}{% endblock %}</main>
+
+<!-- ── Footer ────────────────────────────────────────────────────────── -->
+<footer class="footer-cq">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-3 mb-2 mb-md-0">
+                <div class="footer-brand"><i class="bi bi-shield-fill-check me-2"></i>CYBERQUEST</div>
+                <div class="footer-text">Cybersecurity Awareness Game</div>
+            </div>
+            <div class="col-md-5 mb-2 mb-md-0">
+                <div class="footer-text">
+                    <i class="bi bi-mortarboard-fill me-1"></i>
+                    ICT932 — Cybersecurity Testing and Assurance<br>
+                    Crown Institute of Higher Education (CIHE) © 2026
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="footer-team">
+                    Prashan Manandhar | Raju Kshetri | Pramesh Silwal | Susanta Dhakal
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

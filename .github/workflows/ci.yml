@@ -1,0 +1,91 @@
+name: CyberQuest CI Pipeline
+
+on:
+  push:
+    branches: [ main, dev, feature/* ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+
+  # ─────────────────────────────────────────
+  # JOB 1 — Unit & Integration Tests
+  # ─────────────────────────────────────────
+  test:
+    name: Run Pytest Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-flask
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/test_auth.py tests/test_game.py tests/test_security.py -v
+        env:
+          SECRET_KEY: ci-test-secret-key
+          DATABASE_URL: sqlite:///:memory:
+          FLASK_ENV: development
+
+  # ─────────────────────────────────────────
+  # JOB 2 — SAST with Bandit
+  # ─────────────────────────────────────────
+  sast:
+    name: SAST Scan (Bandit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit scan
+        run: |
+          python -m bandit -r src/ -f txt
+        continue-on-error: true
+
+  # ─────────────────────────────────────────
+  # JOB 3 — Dependency Scan with pip-audit
+  # ─────────────────────────────────────────
+  dependency-scan:
+    name: Dependency Scan (pip-audit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Run pip-audit
+        run: |
+          python -m pip_audit
+        continue-on-error: true
+

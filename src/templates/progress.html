@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}My Progress — CyberQuest{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0" style="color:var(--cq-cyan);">📊 My Progress</h2>
+      <p style="color:var(--cq-text-muted);" class="mb-0">Track your cybersecurity learning journey</p>
+    </div>
+    <a href="{{ url_for('game.challenges') }}" class="btn btn-cq-outline">← Challenges</a>
+  </div>
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    {% for icon, val, label, color in [
+      ('⭐', total_score, 'Total Points', 'var(--cq-yellow)'),
+      ('✅', correct,     'Correct',      'var(--cq-green)'),
+      ('📝', answered,   'Answered',     'var(--cq-cyan)'),
+      ('🎯', percentage|string ~ '%', 'Accuracy', 'var(--cq-cyan-glow)')
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="stat-card">
+        <div style="font-size:2rem;">{{ icon }}</div>
+        <div class="stat-number" style="color:{{ color }};">{{ val }}</div>
+        <div class="stat-label">{{ label }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Overall completion bar -->
+  <div class="card-cq p-4 mb-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">Overall Completion</h5>
+    <div class="d-flex justify-content-between small mb-2"
+         style="color:var(--cq-text-muted);">
+      <span>{{ answered }} of 15 challenges completed</span>
+      <span>{{ ((answered / 15) * 100)|int }}%</span>
+    </div>
+    <div class="progress-cq">
+      <div class="progress-bar" style="width:{{ ((answered/15)*100)|int }}%"></div>
+    </div>
+  </div>
+
+  <!-- Badges -->
+  <div class="card-cq p-4 mb-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">🏅 Badges Earned ({{ badges|length }})</h5>
+    {% if badges %}
+      <div class="d-flex flex-wrap gap-4">
+        {% for ub in badges %}
+        <div class="text-center">
+          <div style="font-size:2.5rem;">{{ ub.badge.icon }}</div>
+          <div class="small fw-semibold" style="color:var(--cq-yellow);">{{ ub.badge.name }}</div>
+          <div style="color:var(--cq-text-muted); font-size:0.7rem;">
+            {{ ub.earned_at.strftime('%d %b %Y') if ub.earned_at else '' }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:var(--cq-text-muted);" class="mb-0">No badges yet — start answering challenges! 🚀</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="card-cq p-4 mb-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">🕐 Recent Activity</h5>
+    {% if recent_activity %}
+    <div class="table-responsive">
+      <table class="table table-cq">
+        <thead>
+          <tr>
+            <th>Challenge</th><th>Category</th><th>Result</th><th>Points</th><th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for score in recent_activity|reverse %}
+          <tr>
+            <td class="small">{{ score.challenge.question[:55] }}...</td>
+            <td><span class="badge-cq-cyan">{{ score.challenge.category }}</span></td>
+            <td>
+              {% if score.is_correct %}
+                <span style="color:var(--cq-green);">✅ Correct</span>
+              {% else %}
+                <span style="color:var(--cq-red);">❌ Wrong</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--cq-yellow);font-weight:600;">+{{ score.points }}</td>
+            <td style="color:var(--cq-text-muted);" class="small">
+              {{ score.completed_at.strftime('%d %b, %H:%M') if score.completed_at else 'N/A' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p style="color:var(--cq-text-muted);" class="mb-0">No activity yet — go answer some challenges!</p>
+    {% endif %}
+  </div>
+
+  <!-- 2FA Security -->
+  <div class="card-cq p-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">🔐 Account Security — Two-Factor Authentication</h5>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <p style="color:var(--cq-text-muted);" class="small mb-0">
+        Protect your account with an authenticator app (Google Authenticator, Authy).
+        Once enabled, you'll enter a 6-digit code on every login.
+      </p>
+      {% if current_user.is_2fa_enabled %}
+        <div class="text-end">
+          <span style="background:rgba(0,230,118,0.15);color:var(--cq-green);
+                       border:1px solid rgba(0,230,118,0.3); border-radius:20px;
+                       padding:0.3rem 1rem; font-size:0.85rem; font-weight:600;">
+            ✅ 2FA Enabled
+          </span><br class="mt-2">
+          <form method="POST" action="{{ url_for('auth.disable_2fa') }}" class="mt-2"
+                onsubmit="return confirm('Disable 2FA? This reduces your security.')">
+            <button type="submit" class="btn btn-cq-danger btn-sm">Disable 2FA</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="text-end">
+          <div style="background:rgba(255,214,10,0.12);color:var(--cq-yellow);
+                      border:1px solid rgba(255,214,10,0.3); border-radius:20px;
+                      padding:0.3rem 1rem; font-size:0.85rem; font-weight:600;"
+               class="mb-2">
+            ⚠️ Not Enabled
+          </div>
+          <a href="{{ url_for('auth.setup_2fa') }}" class="btn btn-cq-primary">
+            🔐 Enable 2FA Now
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

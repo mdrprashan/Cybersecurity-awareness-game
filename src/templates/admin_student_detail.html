@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ student.username }} — Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-cq-outline btn-sm mb-4">← Dashboard</a>
+  <h3 style="color:var(--cq-cyan);" class="mb-1">🎓 {{ student.username }}</h3>
+  <p style="color:var(--cq-text-muted);" class="mb-4">{{ student.email }} · Joined {{ student.created_at.strftime('%d %b %Y') if student.created_at else 'N/A' }}</p>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-yellow);">{{ total_score }}</div><div class="stat-label">Points</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-green);">{{ correct }}/{{ total_q }}</div><div class="stat-label">Correct</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-cyan);">{{ percentage }}%</div><div class="stat-label">Accuracy</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-number" style="color:var(--cq-cyan-glow);">{{ badges|length }}</div><div class="stat-label">Badges</div></div></div>
+  </div>
+  {% if badges %}
+  <div class="card-cq p-4 mb-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">🏅 Badges</h5>
+    <div class="d-flex flex-wrap gap-3">
+      {% for ub in badges %}<span class="badge-cq-gold fs-6">{{ ub.badge.icon }} {{ ub.badge.name }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  <div class="card-cq mb-4">
+    <div class="p-4 pb-2" style="border-bottom:1px solid var(--cq-border);"><h5 style="color:var(--cq-cyan);" class="mb-0">📝 Answer History</h5></div>
+    {% if scores %}
+    <div class="table-responsive">
+      <table class="table table-cq mb-0">
+        <thead><tr><th>Question</th><th>Category</th><th>Difficulty</th><th>Result</th><th>Points</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for s in scores %}
+          <tr>
+            <td class="small">{{ s.challenge.question[:50] }}...</td>
+            <td><span class="badge-cq-cyan">{{ s.challenge.category }}</span></td>
+            <td><span style="font-size:0.78rem;padding:0.2rem 0.5rem;border-radius:20px;
+              {% if s.challenge.difficulty=='easy' %}background:rgba(0,230,118,0.15);color:var(--cq-green)
+              {% elif s.challenge.difficulty=='medium' %}background:rgba(255,214,10,0.15);color:var(--cq-yellow)
+              {% else %}background:rgba(255,77,109,0.15);color:var(--cq-red){% endif %}">{{ s.challenge.difficulty }}</span></td>
+            <td>{% if s.is_correct %}<span style="color:var(--cq-green);">✅</span>{% else %}<span style="color:var(--cq-red);">❌</span>{% endif %}</td>
+            <td style="color:var(--cq-yellow);font-weight:600;">+{{ s.points }}</td>
+            <td style="color:var(--cq-text-muted);" class="small">{{ s.completed_at.strftime('%d %b, %H:%M') if s.completed_at else 'N/A' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p style="color:var(--cq-text-muted);" class="p-4 mb-0">No answers yet.</p>{% endif %}
+  </div>
+  <div class="card-cq">
+    <div class="p-4 pb-2" style="border-bottom:1px solid var(--cq-border);"><h5 style="color:var(--cq-cyan);" class="mb-0">🔒 Recent Login Attempts</h5></div>
+    {% if attempts %}
+    <div class="table-responsive">
+      <table class="table table-cq mb-0">
+        <thead><tr><th>Time</th><th>IP</th><th>Result</th></tr></thead>
+        <tbody>
+          {% for a in attempts %}
+          <tr>
+            <td class="small" style="color:var(--cq-text-muted);">{{ a.attempted_at.strftime('%d %b %Y, %H:%M') }}</td>
+            <td class="small" style="color:var(--cq-text-muted);">{{ a.ip_address }}</td>
+            <td>{% if a.success %}<span style="color:var(--cq-green);">✅ Success</span>{% else %}<span style="color:var(--cq-red);">❌ Failed</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p style="color:var(--cq-text-muted);" class="p-4 mb-0">No login attempts recorded.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,37 +1,66 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>CyberQuest Challenges</title>
-</head>
+{% extends "base.html" %}
+{% block title %}Challenges — CyberQuest{% endblock %}
 
-<body>
+{% block content %}
+<div class="container py-4">
 
-<h1>CyberQuest Challenges</h1>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0" style="color:var(--cq-cyan);">🛡️ Challenge Categories</h2>
+      <p style="color:var(--cq-text-muted);" class="mb-0">Choose a category to start earning points</p>
+    </div>
+    <div class="text-end">
+      <span class="badge-cq-gold fs-6 px-3 py-2">⭐ {{ total_score }} pts</span>
+      <a href="{{ url_for('game.progress') }}" class="btn btn-cq-outline ms-2">📊 My Progress</a>
+    </div>
+  </div>
 
-<a href="/">Home</a>
+  <!-- Category Cards -->
+  <div class="row g-4 mb-5">
+    {% for cat in categories %}
+    <div class="col-md-4">
+      <div class="card-cq h-100 p-4 text-center" style="transition:border-color 0.2s,transform 0.2s;"
+           onmouseover="this.style.borderColor='var(--cq-cyan)';this.style.transform='translateY(-4px)'"
+           onmouseout="this.style.borderColor='var(--cq-border)';this.style.transform='none'">
+        <div style="font-size:3.5rem;" class="mb-3">{{ cat.icon }}</div>
+        <h4 style="color:var(--cq-cyan);">{{ cat.label }}</h4>
+        <p style="color:var(--cq-text-muted);" class="small mb-3">{{ cat.description }}</p>
 
-<hr>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between small mb-1"
+               style="color:var(--cq-text-muted);">
+            <span>Progress</span>
+            <span>{{ cat.completed }}/{{ cat.total }}</span>
+          </div>
+          <div class="progress-cq">
+            <div class="progress-bar" role="progressbar"
+                 style="width:{{ (cat.completed / cat.total * 100)|int if cat.total > 0 else 0 }}%">
+            </div>
+          </div>
+        </div>
 
-{% for challenge in challenges %}
+        <a href="{{ url_for('game.challenge_category', category=cat.key) }}"
+           class="btn btn-cq-primary w-100 fw-bold">
+          {% if cat.completed == cat.total and cat.total > 0 %}✅ Review
+          {% elif cat.completed > 0 %}▶️ Continue
+          {% else %}🚀 Start{% endif %}
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 
-<div style="border:1px solid black; padding:20px; margin:20px;">
-
-    <h2>{{ challenge.question }}</h2>
-
-    <p><strong>Category:</strong> {{ challenge.category }}</p>
-
-    <p>A. {{ challenge.option_a }}</p>
-    <p>B. {{ challenge.option_b }}</p>
-    <p>C. {{ challenge.option_c }}</p>
-    <p>D. {{ challenge.option_d }}</p>
-
-    <p><strong>Difficulty:</strong> {{ challenge.difficulty }}</p>
-
-    <p><strong>Points:</strong> {{ challenge.points }}</p>
+  <!-- Badges -->
+  {% if badges %}
+  <div class="card-cq p-4">
+    <h5 style="color:var(--cq-cyan);" class="mb-3">🏅 Your Badges</h5>
+    <div class="d-flex flex-wrap gap-3">
+      {% for ub in badges %}
+      <span class="badge-cq-gold fs-6">{{ ub.badge.icon }} {{ ub.badge.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
 </div>
-
-{% endfor %}
-
-</body>
-</html>
+{% endblock %}

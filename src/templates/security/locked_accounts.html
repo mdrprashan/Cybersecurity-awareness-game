@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Locked Accounts — CyberQuest{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 style="color:var(--cq-cyan);" class="mb-0">🔒 Locked Accounts</h3>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-cq-outline">← Dashboard</a>
+  </div>
+  <div class="card-cq p-4">
+    <p style="color:var(--cq-text-muted);" class="small mb-3">
+      Accounts locked after ≥5 failed login attempts within the last {{ lockout_minutes }} minutes.
+    </p>
+    {% if locked %}
+    <div class="table-responsive">
+      <table class="table table-cq">
+        <thead><tr><th>Email</th><th>Failed Attempts</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for email, fail_count in locked %}
+          <tr>
+            <td style="color:var(--cq-text);">{{ email }}</td>
+            <td><span style="background:rgba(255,77,109,0.15);color:var(--cq-red);border:1px solid rgba(255,77,109,0.3);border-radius:20px;padding:0.2rem 0.75rem;font-size:0.8rem;">{{ fail_count }} failures</span></td>
+            <td><span style="background:rgba(255,214,10,0.15);color:var(--cq-yellow);border:1px solid rgba(255,214,10,0.3);border-radius:20px;padding:0.2rem 0.75rem;font-size:0.8rem;">🔒 Locked</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p style="color:var(--cq-green);" class="mb-0">✅ No accounts are currently locked.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

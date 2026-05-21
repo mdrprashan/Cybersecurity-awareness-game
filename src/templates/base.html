@@ -1,197 +1,420 @@
 <!DOCTYPE html>
+<!--
+    base.html — Shared base template for CyberQuest
+    Authors: Susanta Dhakal (CIHE250321) & Pramesh Silwal (CIHE241339)
+    Fixed: Prashan Manandhar (CIHE241182) — removed broken url_for('home')
+-->
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}CyberQuest{% endblock %}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    /* ── Base ── */
-    body { background-color: #0D1B2A; color: #FFFFFF; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CyberQuest — Cybersecurity Awareness Game for ICT932 CIHE">
+    <title>{% block title %}CyberQuest{% endblock %} | ICT932</title>
 
-    /* ── Navbar ── */
-    .navbar { background-color: #0A1628 !important; border-bottom: 2px solid #FFD700; }
-    .navbar-brand { color: #FFD700 !important; font-weight: 700; font-size: 1.4rem; letter-spacing: 1px; }
-    .navbar-brand:hover { color: #FFC200 !important; }
-    .nav-link { color: #FFFFFF !important; font-weight: 500; }
-    .nav-link:hover { color: #FFD700 !important; }
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    /* ── Buttons ── */
-    .btn-gold  { background-color: #FFD700; color: #0D1B2A; font-weight: 700; border: none; }
-    .btn-gold:hover  { background-color: #FFC200; color: #0D1B2A; }
-    .btn-cyan  { background-color: #00B4D8; color: #0D1B2A; font-weight: 700; border: none; }
-    .btn-cyan:hover  { background-color: #0096B5; color: #FFFFFF; }
-    .btn-outline-gold { border: 2px solid #FFD700; color: #FFD700; font-weight: 700; background: transparent; }
-    .btn-outline-gold:hover { background-color: #FFD700; color: #0D1B2A; }
+    <style>
+        /* ── Design Tokens ─────────────────────────────────────────────── */
+        :root {
+            --cq-navy:      #0D1B2A;
+            --cq-navy-mid:  #112233;
+            --cq-navy-light:#1A2E42;
+            --cq-cyan:      #00B4D8;
+            --cq-cyan-glow: #00D4FF;
+            --cq-green:     #00E676;
+            --cq-red:       #FF4D6D;
+            --cq-yellow:    #FFD60A;
+            --cq-text:      #E0EAF4;
+            --cq-text-muted:#7A9BB5;
+            --cq-border:    rgba(0, 180, 216, 0.2);
+            --cq-shadow:    0 4px 24px rgba(0, 180, 216, 0.12);
+            --cq-radius:    12px;
+            --font-heading: 'Orbitron', monospace;
+            --font-body:    'Rajdhani', sans-serif;
+        }
 
-    /* ── Cards ── */
-    .card { background-color: #132338; border: 1px solid #1E3A5F; color: #FFFFFF; }
-    .card h5, .card h6 { color: #FFD700; }
-    .card p  { color: #FFFFFF; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
-    /* ── Forms ── */
-    .form-control { background-color: #1A2F47; border: 1px solid #2A4A6F; color: #FFFFFF; }
-    .form-control::placeholder { color: #6A8AAA; }
-    .form-control:focus { background-color: #1A2F47; border-color: #FFD700; color: #FFFFFF; box-shadow: 0 0 0 0.2rem rgba(255,215,0,0.2); }
-    .form-select { background-color: #1A2F47; border: 1px solid #2A4A6F; color: #FFFFFF; }
-    .form-select option { background-color: #1A2F47; color: #FFFFFF; }
-    .form-select:focus { border-color: #FFD700; box-shadow: 0 0 0 0.2rem rgba(255,215,0,0.2); }
-    .form-label { color: #FFD700; font-weight: 600; }
-    .form-text  { color: #A0B4C8 !important; }
-    .input-group-text { background-color: #0A1628; border: 1px solid #2A4A6F; }
+        body {
+            background-color: var(--cq-navy);
+            color: var(--cq-text);
+            font-family: var(--font-body);
+            font-size: 1.05rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-    /* ── Alerts ── */
-    .alert-success { background-color: #1A3A2A; border-color: #2ECC71; color: #FFFFFF; }
-    .alert-danger  { background-color: #3A1A1A; border-color: #E74C3C; color: #FFFFFF; }
-    .alert-warning { background-color: #3A2F1A; border-color: #FFD700; color: #FFFFFF; }
-    .alert-info    { background-color: #1A2F3A; border-color: #00B4D8; color: #FFFFFF; }
-    .btn-close { filter: invert(1); }
+        h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
+        main { flex: 1; }
 
-    /* ── Badges ── */
-    .badge.bg-info { background-color: #00B4D8 !important; color: #0D1B2A !important; font-weight: 700; }
+        /* ── Navbar ────────────────────────────────────────────────────── */
+        .navbar-cyberquest {
+            background: rgba(13,27,42,0.97);
+            border-bottom: 1px solid var(--cq-border);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem 0;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .navbar-brand-cq {
+            font-family: var(--font-heading); font-weight: 800;
+            font-size: 1.35rem; color: var(--cq-cyan) !important;
+            text-decoration: none; letter-spacing: 2px;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .navbar-brand-cq .brand-icon {
+            color: var(--cq-cyan-glow); font-size: 1.5rem;
+            filter: drop-shadow(0 0 6px var(--cq-cyan));
+        }
+        .navbar-brand-cq:hover { color: var(--cq-cyan-glow) !important; }
+        .nav-link-cq {
+            color: var(--cq-text-muted) !important;
+            font-family: var(--font-body); font-weight: 500;
+            font-size: 0.95rem; letter-spacing: 0.5px;
+            padding: 0.5rem 0.85rem !important;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+        }
+        .nav-link-cq:hover, .nav-link-cq.active {
+            color: var(--cq-cyan) !important;
+            background: rgba(0,180,216,0.08);
+        }
+        .btn-nav-login {
+            border: 1px solid var(--cq-cyan); color: var(--cq-cyan);
+            background: transparent; border-radius: 6px;
+            padding: 0.4rem 1rem; font-weight: 600; font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .btn-nav-login:hover {
+            background: rgba(0,180,216,0.15); color: var(--cq-cyan-glow);
+        }
+        .btn-nav-register {
+            background: var(--cq-cyan); color: var(--cq-navy);
+            border: none; border-radius: 6px;
+            padding: 0.4rem 1rem; font-weight: 700; font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .btn-nav-register:hover {
+            background: var(--cq-cyan-glow);
+            box-shadow: 0 4px 12px rgba(0,180,216,0.35);
+        }
+        .navbar-username { color: var(--cq-text-muted); font-size: 0.85rem; }
+        .navbar-username strong { color: var(--cq-cyan); }
+        .navbar-toggler { border-color: var(--cq-border); }
+        .navbar-toggler-icon { filter: invert(60%) sepia(80%) saturate(400%) hue-rotate(165deg); }
 
-    /* ── Dropdown ── */
-    .dropdown-menu-dark { background-color: #0A1628; border: 1px solid #FFD700; }
-    .dropdown-item { color: #FFFFFF !important; }
-    .dropdown-item:hover { background-color: #1A2F47 !important; color: #FFD700 !important; }
-    .dropdown-divider { border-color: #2A4A6F; }
+        /* ── Flash Messages ────────────────────────────────────────────── */
+        .flash-container { padding: 0.5rem 0; }
+        .alert-cq {
+            border-left: 4px solid; border-radius: 0 var(--cq-radius) var(--cq-radius) 0;
+            background: var(--cq-navy-mid); color: var(--cq-text);
+            border-top: none; border-right: none; border-bottom: none;
+            font-weight: 500;
+        }
+        .alert-cq.alert-success { border-color: var(--cq-green); }
+        .alert-cq.alert-danger  { border-color: var(--cq-red); }
+        .alert-cq.alert-info    { border-color: var(--cq-cyan); }
+        .alert-cq.alert-warning { border-color: var(--cq-yellow); }
 
-    /* ── Footer ── */
-    footer { background-color: #0A1628; border-top: 2px solid #FFD700; padding: 20px 0; margin-top: 60px; }
-    footer .footer-title { color: #FFD700 !important; font-weight: 700; }
-    footer .footer-text  { color: #FFFFFF !important; }
-    footer .footer-names { color: #FFD700 !important; font-weight: 600; }
+        /* ── Dark Cards ────────────────────────────────────────────────── */
+        .card-cq {
+            background: var(--cq-navy-mid);
+            border: 1px solid var(--cq-border);
+            border-radius: var(--cq-radius);
+            color: var(--cq-text);
+            box-shadow: var(--cq-shadow);
+        }
+        .card-cq .card-header {
+            background: var(--cq-navy-light);
+            border-bottom: 1px solid var(--cq-border);
+            color: var(--cq-text);
+            border-radius: var(--cq-radius) var(--cq-radius) 0 0;
+        }
 
-    /* ── Misc ── */
-    h1, h2, h3, h4, h5, h6 { color: #FFFFFF; }
-    .text-muted { color: #A0B4C8 !important; }
-    hr { border-color: #2A4A6F; }
-  </style>
-  {% block extra_css %}{% endblock %}
+        /* ── Dark Tables ───────────────────────────────────────────────── */
+        .table-cq { color: var(--cq-text); }
+        .table-cq thead th {
+            background: var(--cq-navy-light);
+            color: var(--cq-cyan);
+            border-color: var(--cq-border);
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+        .table-cq tbody tr {
+            border-color: var(--cq-border);
+        }
+        .table-cq tbody tr:hover {
+            background: rgba(0,180,216,0.05);
+        }
+        .table-cq td, .table-cq th {
+            border-color: var(--cq-border);
+            vertical-align: middle;
+        }
+
+        /* ── Dark Forms ────────────────────────────────────────────────── */
+        .form-control-cq, .form-select-cq {
+            background: var(--cq-navy-light);
+            border: 1px solid var(--cq-border);
+            color: var(--cq-text);
+            border-radius: 8px;
+        }
+        .form-control-cq:focus, .form-select-cq:focus {
+            background: var(--cq-navy-light);
+            border-color: var(--cq-cyan);
+            color: var(--cq-text);
+            box-shadow: 0 0 0 3px rgba(0,180,216,0.2);
+        }
+        .form-control-cq::placeholder { color: var(--cq-text-muted); }
+
+        /* ── CyberQuest Buttons ────────────────────────────────────────── */
+        .btn-cq-primary {
+            background: var(--cq-cyan); color: var(--cq-navy);
+            border: none; font-weight: 700; border-radius: 8px;
+            font-family: var(--font-body); letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+        .btn-cq-primary:hover {
+            background: var(--cq-cyan-glow);
+            box-shadow: 0 4px 16px rgba(0,180,216,0.4);
+        }
+        .btn-cq-outline {
+            border: 1px solid var(--cq-cyan); color: var(--cq-cyan);
+            background: transparent; border-radius: 8px;
+            font-weight: 600; transition: all 0.2s;
+        }
+        .btn-cq-outline:hover {
+            background: rgba(0,180,216,0.12); color: var(--cq-cyan-glow);
+        }
+        .btn-cq-danger {
+            border: 1px solid var(--cq-red); color: var(--cq-red);
+            background: transparent; border-radius: 8px;
+            font-weight: 600; transition: all 0.2s;
+        }
+        .btn-cq-danger:hover { background: rgba(255,77,109,0.12); }
+
+        /* ── Badges / Pills ────────────────────────────────────────────── */
+        .badge-cq-cyan {
+            background: rgba(0,180,216,0.15);
+            color: var(--cq-cyan);
+            border: 1px solid var(--cq-border);
+            border-radius: 20px; padding: 0.3rem 0.8rem;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .badge-cq-gold {
+            background: rgba(255,214,10,0.15);
+            color: var(--cq-yellow);
+            border: 1px solid rgba(255,214,10,0.3);
+            border-radius: 20px; padding: 0.3rem 0.8rem;
+            font-size: 0.8rem; font-weight: 600;
+        }
+
+        /* ── Progress bars ─────────────────────────────────────────────── */
+        .progress-cq {
+            background: var(--cq-navy-light);
+            border-radius: 10px; height: 8px;
+        }
+        .progress-cq .progress-bar {
+            background: linear-gradient(90deg, var(--cq-cyan), var(--cq-green));
+            border-radius: 10px;
+        }
+
+        /* ── Stat Cards ────────────────────────────────────────────────── */
+        .stat-card {
+            background: var(--cq-navy-mid);
+            border: 1px solid var(--cq-border);
+            border-radius: var(--cq-radius);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .stat-card:hover {
+            border-color: var(--cq-cyan);
+            transform: translateY(-2px);
+        }
+        .stat-card .stat-number {
+            font-family: var(--font-heading); font-size: 2rem;
+            font-weight: 800;
+        }
+        .stat-card .stat-label { color: var(--cq-text-muted); font-size: 0.85rem; }
+
+        /* ── Footer ────────────────────────────────────────────────────── */
+        .footer-cq {
+            background: var(--cq-navy-mid);
+            border-top: 1px solid var(--cq-border);
+            padding: 1.5rem 0;
+            margin-top: auto;
+        }
+        .footer-brand {
+            font-family: var(--font-heading); font-weight: 800;
+            color: var(--cq-cyan); font-size: 1rem; letter-spacing: 2px;
+        }
+        .footer-text { color: var(--cq-text-muted); font-size: 0.85rem; }
+        .footer-team { color: var(--cq-cyan); font-size: 0.85rem; font-weight: 600; }
+
+        /* ── Scrollbar ─────────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--cq-navy); }
+        ::-webkit-scrollbar-thumb { background: var(--cq-navy-light); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cq-cyan); }
+    </style>
+
+    {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
-  <!-- ── NAVBAR ── -->
-  <nav class="navbar navbar-expand-lg">
+<!-- ── Navbar ───────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-cyberquest">
     <div class="container">
+        <!-- Fixed: use auth.login instead of non-existent 'home' route -->
+        <a class="navbar-brand-cq"
+           href="{{ url_for('auth.login') if not current_user.is_authenticated
+                   else (url_for('admin.dashboard') if current_user.role == 'teacher'
+                         else url_for('game.challenges')) }}">
+            <i class="bi bi-shield-fill-check brand-icon"></i>
+            CYBER<span style="color:#fff;">QUEST</span>
+        </a>
 
-      <!-- Brand -->
-      <a class="navbar-brand" href="{{ url_for('index') }}">
-        <i class="bi bi-shield-lock-fill me-2"></i>CyberQuest
-      </a>
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-      <button class="navbar-toggler border-secondary" type="button"
-              data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarNav">
-
-        <!-- Left links — only when logged in -->
-        <ul class="navbar-nav me-auto">
-          {% if current_user.is_authenticated %}
-            {% if current_user.role == 'student' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('game.challenges') }}">
-                  <i class="bi bi-controller me-1"></i>Challenges
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('game.progress') }}">
-                  <i class="bi bi-graph-up me-1"></i>My Progress
-                </a>
-              </li>
-            {% elif current_user.role == 'teacher' %}
-              <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
-                  <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                </a>
-              </li>
+        <div class="collapse navbar-collapse" id="navbarMain">
+            {% if current_user.is_authenticated %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if current_user.role == 'teacher' %}
+                <li class="nav-item">
+                    <a class="nav-link nav-link-cq" href="{{ url_for('admin.dashboard') }}">
+                        <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-cq" href="{{ url_for('admin.manage_challenges') }}">
+                        <i class="bi bi-puzzle me-1"></i> Challenges
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-cq" href="{{ url_for('security.audit_log') }}">
+                        <i class="bi bi-shield-lock me-1"></i> Audit Log
+                    </a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link nav-link-cq" href="{{ url_for('game.challenges') }}">
+                        <i class="bi bi-controller me-1"></i> Challenges
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-cq" href="{{ url_for('game.progress') }}">
+                        <i class="bi bi-bar-chart-fill me-1"></i> My Progress
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-link-cq" href="{{ url_for('game.result') }}">
+                        <i class="bi bi-trophy me-1"></i> Results
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            {% else %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
             {% endif %}
-          {% endif %}
-        </ul>
 
-        <!-- Right side -->
-        <ul class="navbar-nav ms-auto align-items-center gap-2">
-
-          {% if current_user.is_authenticated %}
-            <!-- Logged in — show username, role badge, logout -->
-            <li class="nav-item">
-              <span class="nav-link pe-none">
-                <i class="bi bi-person-circle me-1" style="color: #FFD700;"></i>
-                <span style="color: #FFD700; font-weight: 700;">{{ current_user.username }}</span>
-                <span class="badge ms-1"
-                      style="background-color: #FFD700; color: #0D1B2A; font-size: 0.75rem;">
-                  {{ current_user.role }}
-                </span>
-              </span>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.setup_2fa') }}" title="Manage 2FA">
-                <i class="bi bi-shield-check" style="color: #FFD700;"></i>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="btn btn-outline-gold btn-sm px-3"
-                 href="{{ url_for('auth.logout') }}">
-                <i class="bi bi-box-arrow-right me-1"></i>Logout
-              </a>
-            </li>
-
-          {% else %}
-            <!-- Not logged in — show Register and Login buttons -->
-            <li class="nav-item">
-              <a class="btn btn-outline-gold btn-sm px-3"
-                 href="{{ url_for('auth.register') }}">
-                <i class="bi bi-person-plus me-1"></i>Register
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="btn btn-gold btn-sm px-3"
-                 href="{{ url_for('auth.login') }}">
-                <i class="bi bi-box-arrow-in-right me-1"></i>Login
-              </a>
-            </li>
-          {% endif %}
-
-        </ul>
-      </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if current_user.is_authenticated %}
+                    <span class="navbar-username d-none d-md-inline">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <strong>{{ current_user.username }}</strong>
+                        <span class="badge ms-1"
+                              style="background:rgba(0,180,216,0.15);
+                                     color:var(--cq-cyan); font-size:0.7rem;">
+                            {{ current_user.role | capitalize }}
+                        </span>
+                    </span>
+                    {% if not current_user.is_teacher %}
+                    <a href="{{ url_for('auth.setup_2fa') }}"
+                       class="btn-nav-login btn"
+                       title="2FA Settings">
+                        <i class="bi bi-shield-lock{% if current_user.is_2fa_enabled %}-fill{% endif %}"></i>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn-nav-login btn">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn-nav-login btn">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn-nav-register btn">
+                        Register
+                    </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
-  </nav>
+</nav>
 
-  <!-- ── FLASH MESSAGES ── -->
-  <div class="container mt-3">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-  </div>
+<!-- ── Flash Messages (handled once here, not in child templates) ────────── -->
+<div class="flash-container">
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-cq alert-{{ category }} alert-dismissible fade show mt-2" role="alert">
+                    {% if category == 'success' %}<i class="bi bi-check-circle-fill me-2" style="color:var(--cq-green)"></i>
+                    {% elif category == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--cq-red)"></i>
+                    {% elif category == 'info' %}<i class="bi bi-info-circle-fill me-2" style="color:var(--cq-cyan)"></i>
+                    {% else %}<i class="bi bi-exclamation-circle-fill me-2" style="color:var(--cq-yellow)"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white"
+                            data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
 
-  <!-- ── MAIN CONTENT ── -->
-  <main class="container py-4">
+<!-- ── Main Content ──────────────────────────────────────────────────────── -->
+<main>
     {% block content %}{% endblock %}
-  </main>
+</main>
 
-  <!-- ── FOOTER ── -->
-  <footer>
-    <div class="container text-center">
-      <p class="footer-title mb-1">🛡️ CyberQuest — Cybersecurity Awareness Game</p>
-      <p class="footer-text mb-1">ICT932 — Crown Institute of Higher Education (CIHE) &copy; 2025</p>
-      <p class="footer-names mb-0">
-        Prashan Manandhar &nbsp;|&nbsp; Raju Kshetri &nbsp;|&nbsp;
-        Pramesh Silwal &nbsp;|&nbsp; Susanta Dhakal
-      </p>
+<!-- ── Footer ───────────────────────────────────────────────────────────── -->
+<footer class="footer-cq">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-3 mb-2 mb-md-0">
+                <div class="footer-brand"><i class="bi bi-shield-fill-check me-2"></i>CYBERQUEST</div>
+                <div class="footer-text">Cybersecurity Awareness Game</div>
+            </div>
+            <div class="col-md-5 mb-2 mb-md-0">
+                <div class="footer-text">
+                    <i class="bi bi-mortarboard-fill me-1"></i>
+                    ICT932 — Cybersecurity Testing and Assurance<br>
+                    Crown Institute of Higher Education (CIHE) © 2026
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="footer-team">
+                    Prashan Manandhar | Raju Kshetri | Pramesh Silwal | Susanta Dhakal
+                </div>
+            </div>
+        </div>
     </div>
-  </footer>
+</footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  {% block extra_js %}{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+
 </body>
 </html>

@@ -2,98 +2,121 @@
 {% block title %}Set Up 2FA — CyberQuest{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-  <div class="col-md-6 col-lg-5">
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
 
-    <div class="card shadow-sm border-0">
-      <div class="card-body p-4">
+      <div class="card-cq p-4">
 
+        <!-- Header -->
         <div class="text-center mb-4">
-          <span style="font-size:2.5rem;">🔐</span>
-          <h3 class="fw-bold mt-2 mb-0">Set Up Two-Factor Authentication</h3>
-          <p class="text-muted small">Protect your account with an authenticator app</p>
-        </div>
-
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show py-2" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
-        {% endwith %}
-
-        <!-- Step 1: Install app -->
-        <div class="mb-4">
-          <h6 class="fw-bold text-primary">Step 1 — Install an Authenticator App</h6>
-          <p class="small text-muted mb-1">Download one of these free apps on your phone:</p>
-          <ul class="small text-muted mb-0">
-            <li>Google Authenticator</li>
-            <li>Microsoft Authenticator</li>
-            <li>Authy</li>
-          </ul>
-        </div>
-
-        <!-- Step 2: Scan QR code -->
-        <div class="mb-4">
-          <h6 class="fw-bold text-primary">Step 2 — Scan the QR Code</h6>
-          <div class="text-center my-3">
-            <img src="data:image/png;base64,{{ qr_code }}"
-                 alt="2FA QR Code" class="img-fluid border rounded p-1"
-                 style="max-width:200px;">
-          </div>
-          <p class="small text-muted text-center mb-1">
-            Can't scan? Enter this secret key manually:
+          <div style="font-size:3.5rem; filter:drop-shadow(0 0 14px var(--cq-cyan));">🔐</div>
+          <h3 style="color:var(--cq-cyan); font-size:1.6rem;" class="mt-2 mb-1">
+            Set Up Two-Factor Authentication
+          </h3>
+          <p style="color:var(--cq-text-sub); font-size:0.95rem;" class="mb-0">
+            Securing your
+            <span style="color:var(--cq-yellow); font-weight:700;">
+              {{ current_user.role | capitalize }}
+            </span>
+            account: <strong style="color:var(--cq-text);">{{ current_user.username }}</strong>
           </p>
-          <div class="bg-light rounded p-2 text-center">
-            <code class="user-select-all">{{ secret }}</code>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="mb-3 p-3 rounded-3"
+             style="background:rgba(0,180,216,0.07); border:1px solid var(--cq-border);">
+          <h6 style="color:var(--cq-cyan); font-size:1rem;" class="mb-2">
+            Step 1 — Install an Authenticator App
+          </h6>
+          <p style="color:var(--cq-text-sub); font-size:0.92rem;" class="mb-2">
+            Download any of these free apps on your phone:
+          </p>
+          <div class="d-flex gap-3 flex-wrap">
+            <span style="color:var(--cq-text); font-size:0.9rem;">📱 Google Authenticator</span>
+            <span style="color:var(--cq-text); font-size:0.9rem;">📱 Microsoft Authenticator</span>
+            <span style="color:var(--cq-text); font-size:0.9rem;">📱 Authy</span>
           </div>
         </div>
 
-        <!-- Step 3: Verify -->
-        <div class="mb-3">
-          <h6 class="fw-bold text-primary">Step 3 — Enter the 6-Digit Code</h6>
+        <!-- Step 2 — QR Code -->
+        <div class="mb-3 p-3 rounded-3"
+             style="background:rgba(0,180,216,0.07); border:1px solid var(--cq-border);">
+          <h6 style="color:var(--cq-cyan); font-size:1rem;" class="mb-3">
+            Step 2 — Scan the QR Code
+          </h6>
+          <div class="text-center mb-3">
+            <div class="d-inline-block p-2 rounded-3" style="background:#fff;">
+              <img src="data:image/png;base64,{{ qr_code }}"
+                   alt="2FA QR Code"
+                   style="width:180px; height:180px; display:block;">
+            </div>
+          </div>
+          <p style="color:var(--cq-text-sub); font-size:0.88rem;" class="text-center mb-2">
+            Can't scan? Enter this secret key manually in your app:
+          </p>
+          <div class="text-center p-2 rounded-2"
+               style="background:var(--cq-navy-light); border:1px solid var(--cq-border);">
+            <code style="color:var(--cq-yellow); font-size:1rem; letter-spacing:2px; user-select:all;">
+              {{ secret }}
+            </code>
+          </div>
+        </div>
+
+        <!-- Step 3 — Verify -->
+        <div class="mb-3 p-3 rounded-3"
+             style="background:rgba(0,230,118,0.07); border:1px solid rgba(0,230,118,0.3);">
+          <h6 style="color:var(--cq-green); font-size:1rem;" class="mb-3">
+            Step 3 — Enter the 6-Digit Code to Confirm
+          </h6>
           <form method="POST" action="{{ url_for('auth.setup_2fa') }}">
             <div class="mb-3">
-              <input type="text" class="form-control text-center fw-bold fs-5"
-                     name="token" id="token"
-                     placeholder="000000" maxlength="6" pattern="[0-9]{6}"
-                     autocomplete="one-time-code" required
-                     style="letter-spacing: 0.5rem;">
+              <input type="text" name="token" id="token"
+                     class="form-control form-cq text-center fw-bold"
+                     style="font-size:2rem; letter-spacing:0.6rem; height:64px;"
+                     placeholder="000000"
+                     maxlength="6" pattern="[0-9]{6}"
+                     autocomplete="one-time-code"
+                     inputmode="numeric"
+                     required>
+              <div class="text-center mt-2"
+                   style="color:var(--cq-text-muted); font-size:0.85rem;">
+                Code refreshes every 30 seconds
+              </div>
             </div>
             <div class="d-grid">
-              <button type="submit" class="btn btn-success btn-lg fw-semibold">
-                ✅ Verify & Enable 2FA
+              <button type="submit" class="btn btn-cq-primary btn-lg fw-bold"
+                      style="font-size:1.1rem; padding:0.75rem;">
+                ✅ Verify &amp; Enable 2FA
               </button>
             </div>
           </form>
         </div>
 
-        <hr class="my-3">
-
-        <p class="text-center mb-0 small text-muted">
-          <a href="{{ url_for('game.challenges') }}" class="text-decoration-none">
+        <!-- Skip option -->
+        <div class="text-center p-3 rounded-3"
+             style="background:rgba(255,77,109,0.07); border:1px solid rgba(255,77,109,0.25);">
+          <p style="color:var(--cq-text-sub); font-size:0.88rem;" class="mb-2">
+            ⚠️ Skipping 2FA leaves your account less secure.
+            You will be prompted again on next login.
+          </p>
+          <a href="{{ url_for('auth.skip_2fa') }}"
+             class="btn btn-cq-danger btn-sm px-4">
             Skip for now
           </a>
-          (not recommended)
-        </p>
+        </div>
 
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-  // Auto-focus and auto-submit when 6 digits entered
-  const tokenInput = document.getElementById('token');
-  tokenInput.focus();
-  tokenInput.addEventListener('input', function () {
+  const tok = document.getElementById('token');
+  tok.focus();
+  tok.addEventListener('input', function () {
     this.value = this.value.replace(/\D/g, '');
-    if (this.value.length === 6) {
-      this.closest('form').submit();
-    }
+    if (this.value.length === 6) this.closest('form').submit();
   });
 </script>
 {% endblock %}
